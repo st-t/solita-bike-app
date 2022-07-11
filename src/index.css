@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap');
+
+/* IBM */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bungee+Inline&display=swap');
+@import url('https://fonts.googleapis.com/css?family=Raleway:400,700,900,400italic,700italic,900italic');
+@import url('https://fonts.googleapis.com/css2?family=Bungee+Inline&family=Dosis:wght@200&family=Kdam+Thmor+Pro&display=swap');
+
+:root {
+    --theme-color: #2fb24c;
+    --theme-color-light: #33ad4e;
+
+    --bg-color-0: #121315;
+    --bg-color-0-opa: #121315dc;
+    --bg-color-1: #0f0f11;
+    --bg-color-2: #2c3035;
+
+    --border-0: #1f2125;
+
+    --text-color-0: #fff;
+    --text-color-1: #afafaf;
+}
+
+body {
+    width: 100%;
+    font-family: 'Dosis', sans-serif;
+    font-weight: 0;
+    background: var(--bg-color-0);
+}
+
+::-webkit-scrollbar {
+    width: 7px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-color-1);
+    width: 5px;
+}

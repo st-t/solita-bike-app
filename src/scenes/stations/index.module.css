@@ -1,0 +1,25 @@
+.fade_class {
+    animation: fadeIn ease 3s;
+    -webkit-animation: fadeIn ease 3s;
+    -moz-animation: fadeIn ease 3s;
+    -o-animation: fadeIn ease 3s;
+    -ms-animation: fadeIn ease 3s;
+}
+
+.container {
+    color: var(--text-color-0);
+    margin: 0 auto;
+    margin-top: 30px;
+    transition: .3s ease;
+    padding-bottom: 20px;
+    flex-grow: 0;
+    font-size: 40px;
+    font-weight: 600;
+    font-stretch: normal;
+    font-style: normal;
+    line-height: normal;
+    text-align: center;
+    color: #fff;
+    text-align: center;
+    padding-right: 200px;
+}

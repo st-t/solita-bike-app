@@ -1,0 +1,52 @@
+.content {
+    background: #242424;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.message {
+    color: var(--text-color-1);
+    font-size: 20px;
+}
+
+.content .loader {
+    position: relative;
+    height: 10px;
+    width: 330px;
+    background: #242424;
+    margin: 22px 0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.content .loader .inner {
+    display: block;
+    height: 10px;
+    width: 200px;
+    background: var(--theme-color);
+    position: absolute;
+    left: -260px;
+    animation: loader 2s infinite;
+    border-radius: 4px;
+}
+
+
+@keyframes loader {
+    0% {
+        left: -260px;
+    }
+    50% {
+        left: 400px;
+    }
+    100% {
+        left: -260px;
+    }
+}
