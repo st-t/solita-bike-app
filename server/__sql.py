@@ -66,6 +66,13 @@ def scrape_stations(console_log=False):
     - return : none
     """
 
+    # Empty the table(s) before performing data import
+    query = "TRUNCATE TABLE `city_stations`;"
+    exec_query(query, [])
+
+    query = "TRUNCATE TABLE `city_translations`;"
+    exec_query(query, [])
+
     i = 0
     file = 'datasets/Helsingin_ja_Espoon_kaupunkipyöräasemat_avoin.csv'
 
@@ -114,21 +121,21 @@ def scrape_stations(console_log=False):
 
             # Insert in batch of 100
             if i > 100: 
-                insert_batch(stations_batch, translations_batch)
+                insert_station_batch(stations_batch, translations_batch)
 
                 i = 0
                 stations_batch = []
                 translations_batch = []
 
         # File ended, insert rest of the rows if we didn't do that already
-        if not i == 0: insert_batch(stations_batch, translations_batch)
+        if not i == 0: insert_station_batch(stations_batch, translations_batch)
 
 
 
-def insert_batch(stations_batch, translations_batch):
+def insert_station_batch(stations_batch, translations_batch):
 
     """ 
-    insert_batch()
+    insert_station_batch()
 
     - parameters : (
             [array] array of query arguments
@@ -156,39 +163,160 @@ def insert_batch(stations_batch, translations_batch):
 
 
 
-def scrape_journeys():
+def scrape_journeys(console_log=False):
     
     """ 
     scrape_journeys()
 
-    - parameters : ()
-    - description : reads journey file and inserts data to database
+    - parameters : (
+            [bool] enable console logging (dev enviroment)
+    )
+
+    - description :
+    reads journey dataset(s), filters and inserts data to database
+    this function will take a few minutes to execute (around 3 million rows)
+
     - return : none
     """
 
-    i = 0
-    file = 'datasets/2021-05.csv'
+    # Empty the table before performing data import
+    query = "TRUNCATE TABLE `city_journeys`;"
+    exec_query(query, [])
 
-    with open(file) as lines:
+    i = 1
+    queries = 0
 
-        for line in lines:
-            
-            line = line.rstrip()
-            line = line.replace('Ã¤', 'ä')
-            data = line.split(',')
+    # Datasets 
+    files = [
+        'datasets/2021-05.csv',
+        'datasets/2021-06.csv',
+        'datasets/2021-07.csv'
+    ]
 
-            if len(data) > 6:
-                print('\n \n Departure: {}'.format(data[0]),
-                '\n Return: {}'.format(data[1]),
-                '\n Departure Station ID: {}'.format(data[2]),
-                '\n Departure Station: {}'.format(data[3]),
-                '\n Return Station ID: {}'.format(data[4]),
-                '\n Return Station: {} '.format(data[5]),
-                '\n Distance: {}'.format(data[6]),
-                '\n Duration: {}'.format(data[7]))
+    # Loop all files
+    for file in files:
 
-            i += 1
-            if i > 10: break
+        print(' [#] Processing file', file, '...')
+
+        with open(file) as lines:
+
+            distance = 0
+            duration = 0
+            return_station_id = 4
+            journeys_batch = []
+            return_station = ''
+            departure_station = ''
+
+            for line in lines:
+                
+                # Fix some characters and split the data into an array
+                line = line.rstrip()
+                line = line.replace('Ã¤', 'ä')
+                data = line.split(',')
+
+                # Set empty data to 0 to avoid errors 
+                for x in range(len(data)):
+                    if data[x] == '': data[x] = 0
+
+                # If we have an usable array and skip first line
+                if len(data) > 7:
+                    if not 'Departure' in data[0]:
+                        
+                        # Fix some array index formatting with extra commas
+                        # Source: trust me bro
+                        if len(data) == 9:
+
+                            distance = 7
+                            duration = 8
+                            return_station_id = 5
+
+                            departure_station = data[3]
+                            return_station = data[5] + data[6]
+                            return_station = return_station.replace('"', '')
+
+                        elif len(data) == 8: 
+
+                            distance = 6
+                            duration = 7
+                            return_station_id = 4
+
+                            return_station = data[5]
+                            departure_station = data[3]
+
+                        elif len(data) == 10:
+                            
+                            distance = 8
+                            duration = 9
+                            return_station_id = 5
+
+                            departure_station = data[3] + data[4]
+                            departure_station = departure_station.replace('"', '')
+                            return_station = data[6] + data[7]
+                            return_station = return_station.replace('"', '')
+                        
+                        # For debugging
+                        if console_log:
+                            print('\n \n Departure: {}'.format(data[0]),
+                            '\n Return: {}'.format(data[1]),
+                            '\n Departure Station ID: {}'.format(data[2]),
+                            '\n Departure Station: {}'.format(departure_station),
+                            '\n Return Station ID: {}'.format(data[return_station_id]),
+                            '\n Return Station: {}'.format(return_station),
+                            '\n Distance: {}'.format(data[distance]),
+                            '\n Duration: {}'.format(data[duration]))
+
+                            print('len:', len(data))
+                        
+                        # Filter journeys we don't want to import 
+                        if float(data[duration]) < 10.0 or float(data[distance]) < 10.0: 
+                            continue 
+
+                        # Append data for batch query
+                        journeys_batch.append( [
+                            data[0], data[1], data[2], 
+                            data[return_station_id], data[distance], data[duration]
+                        ] )
+
+                i += 1
+
+                # This is a larger dataset 
+                # Let's not do too much at a time
+                if i > 75000: 
+                    i = 1
+                    queries += 1
+                    insert_journey_batch(journeys_batch, queries)
+                    journeys_batch = []
+
+            # Insert the rest if we didn't do that already
+            if not i == 0: insert_journey_batch(journeys_batch, 0)
+
+    print(' [#] Done.')
+
+
+
+def insert_journey_batch(journeys_batch, queries):
+
+    """ 
+    insert_journey_batch()
+
+    - parameters : (
+            [array] array of query arguments
+            [int] amount of queries we've done(for debugging)
+        )
+
+    - description : executes a batch query to database, called from scrape_journeys()
+    - return : none
+    """
+
+    # Insert stations
+    query = "INSERT INTO `city_journeys` " \
+            "(`departure`, `return`, `departure_station`, `return_station`, " \
+            "`distance`, `duration`) " \
+            "VALUES( %s, %s, %s, %s, %s, %s )"
+
+    exec_query(query, journeys_batch, True)
+    if not queries == 0: print(' [#] Batch query successful:', queries*75000)
+
 
 
 def init_tables():
@@ -238,12 +366,36 @@ def init_tables():
 
     exec_query(query, [])
 
+    # Journeys
+    # We don't need to specify names here, since they're already in other table
+    query = "CREATE TABLE IF NOT EXISTS `city_journeys` " \
+            "( " \
+                "`id` INT(1) NOT NULL AUTO_INCREMENT, " \
+                "`departure` DATETIME NOT NULL, " \
+                "`return` DATETIME NOT NULL, " \
+                "`departure_station` INT(1) NOT NULL, " \
+                "`return_station` INT(1) NOT NULL, " \
+                "`distance` FLOAT(12) NOT NULL, " \
+                "`duration` FLOAT(12) NOT NULL, " \
+                "PRIMARY KEY(`id`) USING BTREE, " \
+                "INDEX (`departure`) USING BTREE, " \
+                "INDEX (`return`) USING BTREE, " \
+                "INDEX (`departure_station`) USING BTREE, " \
+                "INDEX (`return_station`) USING BTREE " \
+            ") " \
+            "COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB;"
+
+    exec_query(query, [])
+
 
 
 if __name__ == '__main__':
 
     # This will be removed later and merged with backend core file 
 
+    # Create db tables
     init_tables()
+
+    # To import stations and journeys 
+    # scrape_stations()
     # scrape_journeys()
-    scrape_stations()
