@@ -5,22 +5,16 @@ import anims from '../anims.module.css';
 
 
 export default class index extends Component 
-{
+{  
     constructor(props) 
     {
         super(props);
 
-        this.updateRange = this.updateRange.bind(this);
-
         // Some states to keep our clients happy
         this.state = 
         {
-            example_state: 5000
+            example_state: 5000,
         };
-    }
-
-    updateRange(e) {
-        this.props.updateRange(e.target.value);
     }
 
     // Initialization(s) that requires DOM nodes should go here
@@ -52,16 +46,45 @@ export default class index extends Component
         });
     }
 
-    // Render the page
+    // Render the page <table className={`${styles.container} ${styles.container}`}>
     render() 
     {
         return (
             <div className={anims.fade_class}>
 
                 <div className={styles.container}>
-                    content
+                    
+                    <div className={styles.list}>
+                        <ul>
+                            <li>Journey#</li>
+                            <li>Departure Station</li>
+                            <li>Return Station</li>
+                            <li>Distance</li>
+                            <li>Duration</li>
+                            <li>Departure</li>
+                        </ul>
+                        <ul>
+                            <li>010</li>
+                            <li>Finland</li>
+                            <li>Finland</li>
+                            <li>0123456789</li>
+                            <li>123</li>
+                            <li>
+                                <p>Example of a list</p>
+                            </li>
+                        </ul>
+                        <ul>
+                            <li>010</li>
+                            <li>Finland</li>
+                            <li>Finland</li>
+                            <li>0123456789</li>
+                            <li>123</li>
+                            <li>
+                                <p>Example of a list</p>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-
             </div>
         )
     }

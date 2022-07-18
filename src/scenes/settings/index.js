@@ -9,7 +9,10 @@ export default class index extends Component
             <div className={anims.fade_class}>
 
                 <div className={styles.container}>
-                    settings content
+                    
+                    
+
+
                 </div>
 
             </div>

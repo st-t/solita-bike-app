@@ -11,7 +11,7 @@ import styles from './styles.module.css';
 import useMightyMouse from 'react-hook-mighty-mouse';
 
 
-const Header = () => {
+const Header  = ({ sqlStatus })   => {
 
     // Tracks mouse movement to make the graphics move
     const {position: { client },} = useMightyMouse(true, 'trackElement');
@@ -35,6 +35,8 @@ const Header = () => {
                 <div className={anims.line_3} style={{height: `${client.x && client.x.toFixed(0) / 5}px`}}></div>
             </div>
         </div>
+
+        <small className={styles.sql_status}>{sqlStatus}</small>
     </>
     );
 }
@@ -49,7 +51,8 @@ export default class App extends Component
         this.state = 
         {
             data: {},
-            isLoaded: false
+            isLoaded: false,
+            sqlStatus: '✗ Database is not set'
         }
 
         this.changeProps = this.changeProps.bind(this);
@@ -84,7 +87,7 @@ export default class App extends Component
                     => use this loading screen                      */}
                 {!this.state.isLoaded ? <Loader /> : null}
 
-                <Header/>
+                <Header sqlStatus={this.state.sqlStatus}/>
 
                 {/* Let's handle routing */}
                 <Router>

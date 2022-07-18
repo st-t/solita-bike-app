@@ -1,11 +1,3 @@
-.fade_class {
-    animation: fadeIn ease 3s;
-    -webkit-animation: fadeIn ease 3s;
-    -moz-animation: fadeIn ease 3s;
-    -o-animation: fadeIn ease 3s;
-    -ms-animation: fadeIn ease 3s;
-}
-
 .container {
     color: var(--text-color-0);
     margin: 0 auto;

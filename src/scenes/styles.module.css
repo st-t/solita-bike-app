@@ -9,6 +9,17 @@
     list-style-type: none;
 }
 
+.sql_status {
+    position: absolute;
+    bottom: 6px;
+    left: 15px;
+    color: red;
+    font-style: italic;
+    font-size: 16px;
+    line-break: auto;
+    max-width: 130px;
+}
+
 @media only screen and (max-width: 1300px) {
     .header_links {
         left: 42vw;
