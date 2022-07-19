@@ -170,7 +170,7 @@
     right: 47vh;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1014px) {
     .cool {
         font-size: .7rem;
         right: initial;

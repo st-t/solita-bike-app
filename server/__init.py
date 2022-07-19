@@ -3,9 +3,13 @@
     Backend core
 """
 
+import __sql as db
+
 import json
 from flask_socketio import SocketIO as sio
 from flask import Flask, send_from_directory, request, jsonify
+
+
 
 
 # Compiled React directory (<parent>/build)
@@ -74,8 +78,11 @@ def serve():
 def main():
 
     # init 
-    port: 3000
+    port = 5000
     domain = 'localhost'
+
+    # Create database tables
+    db.init_tables()
 
     print(' [#] __init:', domain, port)
     socketio.run(app, host=domain, port=port)

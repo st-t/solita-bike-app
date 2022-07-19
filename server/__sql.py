@@ -3,8 +3,9 @@
     MySQL functions
 """
 
+import codecs
 import pymysql
-
+import random
 
 
 def exec_query(query, args=[], batch=False):
@@ -66,17 +67,38 @@ def scrape_stations(console_log=False):
     - return : none
     """
 
-    # Empty the table(s) before performing data import
-    query = "TRUNCATE TABLE `city_stations`;"
-    exec_query(query, [])
+    # Lets make sure all languages exist in the database
+    langs = ['fi', 'se', 'us']
+    query = "SELECT * FROM `city_languages`;"
+    languages = exec_query(query, [])
 
-    query = "TRUNCATE TABLE `city_translations`;"
-    exec_query(query, [])
+    # Languages don't exist => insert them 
+    if len(languages) < 3:
+        for x in langs:
+            if not x in languages:
+                print(' [#] Inserted', x, 'language row')
+                query = "INSERT INTO `city_languages` (`language`) VALUES (%s);"
+                exec_query(query, [x])
+
+        # Fetch languages array as we need the IDs later
+        query = "SELECT * FROM `city_languages`;"
+        languages = exec_query(query, [])
+
+    # Empty the table(s) before performing data import
+    # Will throw an error if table is already empty so just pass that 
+    try:
+        query = "TRUNCATE TABLE `city_stations`;"
+        exec_query(query, [])
+
+        query = "TRUNCATE TABLE `city_translations`;"
+        exec_query(query, [])
+    except: pass
 
     i = 0
     file = 'datasets/Helsingin_ja_Espoon_kaupunkipyöräasemat_avoin.csv'
 
-    with open(file) as lines:
+    # Open with codecs to get special characters correct
+    with codecs.open(file, encoding='utf') as lines:
 
         # Mass query data
         stations_batch = []
@@ -86,12 +108,18 @@ def scrape_stations(console_log=False):
             
             # Fix some characters and split the data into an array
             line = line.rstrip()
-            line = line.replace('Ã¤', 'ä')
             data = line.split(',')
 
             # If we have an usable array and skip first line
             if len(data) > 12:
                 if not 'ID' in data[1]:
+                    
+                    # Fixes formatting longer names with commas such as "Aalto-yliopisto (M), Tietot"
+                    for x in range(len(data)):
+                        if x >= len(data): break
+                        if data[x].startswith('"'):
+                            data[x] = data[x] + data[x + 1]
+                            del data[x + 1]
 
                     # For debugging 
                     if console_log:
@@ -112,15 +140,30 @@ def scrape_stations(console_log=False):
                         data[1], data[9], data[11], data[12]
                     ] )
 
-                    translations_batch.append( [ 
-                        data[1], data[4], data[3], data[2],
-                        data[6], data[5], data[8], data[7]
-                    ] )
+                    # Loop the language data from SQL
+                    # We need the language ID for this query 
+                    # (`stationID`, `languageID`, `name`, `address`, `city`) 
+                    for x in languages:
+                        
+                        # [0] == id
+                        # [1] == lang
+                        if x[1] == 'us':
+                            translations_batch.append( [ 
+                                data[1], x[0], data[4], data[5], data[7]
+                            ] )
+                        elif x[1] == 'se':
+                            translations_batch.append( [ 
+                                data[1], x[0], data[3], data[6], data[8]
+                            ] )
+                        elif x[1] == 'fi':
+                            translations_batch.append( [ 
+                                data[1], x[0], data[2], data[5], data[7]
+                            ] )
 
             i += 1
 
-            # Insert in batch of 100
-            if i > 100: 
+            # Insert in batch of 200
+            if i > 200: 
                 insert_station_batch(stations_batch, translations_batch)
 
                 i = 0
@@ -154,9 +197,8 @@ def insert_station_batch(stations_batch, translations_batch):
 
     # Insert station info
     query = "INSERT INTO `city_translations` " \
-            "(`stationID`, `name_en`, `name_swe`, `name_fi`, " \
-            "`address_swe`, `address_fi`, `city_swe`, `city_fi`) " \
-            "VALUES( %s, %s, %s, %s, %s, %s, %s, %s )"
+            "(`stationID`, `languageID`, `name`, `address`, `city`) " \
+            "VALUES( %s, %s, %s, %s, %s )"
 
     exec_query(query, translations_batch, True)
     print(' [#] Batch query successful')
@@ -174,23 +216,25 @@ def scrape_journeys(console_log=False):
 
     - description :
     reads journey dataset(s), filters and inserts data to database
-    this function will take a few minutes to execute (around 3 million rows)
+    this function will take a few minutes to execute (around 3 million rows & 3 files)
 
     - return : none
     """
 
     # Empty the table before performing data import
-    query = "TRUNCATE TABLE `city_journeys`;"
-    exec_query(query, [])
+    try:
+        query = "TRUNCATE TABLE `city_journeys`;"
+        exec_query(query, [])
+    except: pass
 
     i = 1
     queries = 0
 
     # Datasets 
     files = [
-        'datasets/2021-05.csv',
-        'datasets/2021-06.csv',
-        'datasets/2021-07.csv'
+        'datasets/2021-05.csv'
+        #'datasets/2021-06.csv',
+        #'datasets/2021-07.csv'
     ]
 
     # Loop all files
@@ -198,89 +242,63 @@ def scrape_journeys(console_log=False):
 
         print(' [#] Processing file', file, '...')
 
-        with open(file) as lines:
-
-            distance = 0
-            duration = 0
-            return_station_id = 4
+        # Open with codecs to get special characters correct
+        with codecs.open(file, encoding='utf') as lines:
+            
+            # Mass query data
             journeys_batch = []
-            return_station = ''
-            departure_station = ''
 
             for line in lines:
                 
                 # Fix some characters and split the data into an array
                 line = line.rstrip()
-                line = line.replace('Ã¤', 'ä')
                 data = line.split(',')
 
                 # Set empty data to 0 to avoid errors 
                 for x in range(len(data)):
-                    if data[x] == '': data[x] = 0
+                    if data[x] == '': data[x] = '0'
 
                 # If we have an usable array and skip first line
                 if len(data) > 7:
                     if not 'Departure' in data[0]:
                         
-                        # Fix some array index formatting with extra commas
-                        # Source: trust me bro
-                        if len(data) == 9:
+                        # Fixes formatting with some badly generated rows
+                        for x in range(len(data)):
+                            if x >= len(data): break
 
-                            distance = 7
-                            duration = 8
-                            return_station_id = 5
-
-                            departure_station = data[3]
-                            return_station = data[5] + data[6]
-                            return_station = return_station.replace('"', '')
-
-                        elif len(data) == 8: 
-
-                            distance = 6
-                            duration = 7
-                            return_station_id = 4
-
-                            return_station = data[5]
-                            departure_station = data[3]
-
-                        elif len(data) == 10:
-                            
-                            distance = 8
-                            duration = 9
-                            return_station_id = 5
-
-                            departure_station = data[3] + data[4]
-                            departure_station = departure_station.replace('"', '')
-                            return_station = data[6] + data[7]
-                            return_station = return_station.replace('"', '')
+                            if data[x].startswith('"'):
+                                if len(data) == 8: 
+                                    data[x] = data[x].replace('"', '')
+                                    data[x+2] = data[x+2].replace('"', '')
+                                else:
+                                    data[x] = data[x] + data[x + 1]
+                                    del data[x + 1]
                         
                         # For debugging
                         if console_log:
                             print('\n \n Departure: {}'.format(data[0]),
                             '\n Return: {}'.format(data[1]),
                             '\n Departure Station ID: {}'.format(data[2]),
-                            '\n Departure Station: {}'.format(departure_station),
-                            '\n Return Station ID: {}'.format(data[return_station_id]),
-                            '\n Return Station: {}'.format(return_station),
-                            '\n Distance: {}'.format(data[distance]),
-                            '\n Duration: {}'.format(data[duration]))
-
-                            print('len:', len(data))
+                            '\n Departure Station: {}'.format(data[3]),
+                            '\n Return Station ID: {}'.format(data[4]),
+                            '\n Return Station: {}'.format(data[5]),
+                            '\n Distance: {}'.format(data[6]),
+                            '\n Duration: {}'.format(data[7]))
                         
                         # Filter journeys we don't want to import 
-                        if float(data[duration]) < 10.0 or float(data[distance]) < 10.0: 
+                        if float(data[6]) < 10.0 or float(data[7]) < 10.0: 
                             continue 
 
                         # Append data for batch query
                         journeys_batch.append( [
                             data[0], data[1], data[2], 
-                            data[return_station_id], data[distance], data[duration]
+                            data[4], data[6], data[7]
                         ] )
 
                 i += 1
 
                 # This is a larger dataset 
-                # Let's not do too much at a time
+                # Let's not do too much at a time but enough for fast execution
                 if i > 75000: 
                     i = 1
                     queries += 1
@@ -310,8 +328,8 @@ def insert_journey_batch(journeys_batch, queries):
 
     # Insert stations
     query = "INSERT INTO `city_journeys` " \
-            "(`departure`, `return`, `departure_station`, `return_station`, " \
-            "`distance`, `duration`) " \
+            "(`departure`, `return`, `departure_station`, " \
+            "`return_station`, `distance`, `duration`) " \
             "VALUES( %s, %s, %s, %s, %s, %s )"
 
     exec_query(query, journeys_batch, True)
@@ -338,27 +356,38 @@ def init_tables():
                 "`x` FLOAT(12), " \
                 "`y` FLOAT(12), " \
                 "PRIMARY KEY(`id`) USING BTREE, " \
-                "INDEX (`x`) USING BTREE, " \
-                "INDEX (`y`) USING BTREE " \
+                "INDEX (`x`, `y`) USING BTREE " \
             ") " \
             "COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB;"
 
     exec_query(query, [])
 
+    # Languages for station information
+    # Language is defined by its ALPHA-2 code
+    # Added as a seperate table since it never hurts to have faster queries
+    query = "CREATE TABLE IF NOT EXISTS `city_languages` " +\
+            "( " +\
+                "`id` INT(1) NOT NULL AUTO_INCREMENT, " +\
+                "`language` VARCHAR(3) NOT NULL, " +\
+                "PRIMARY KEY(`id`) USING BTREE " \
+            ") " +\
+            "COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB;"
+
+    exec_query(query, [])
+
     # Station information 
-    # 64 cells should be more than enough
-    # If a station is removed, also remove the translations automatically
+    # Re-structured for possibility to add more languages
+    # If a station is removed from city_stations, the table will remove translations of that station automatically
     query = "CREATE TABLE IF NOT EXISTS `city_translations` " +\
             "( " +\
                 "`stationID` INT(1) NOT NULL, " +\
-                "`name_en` VARCHAR(64), " +\
-                "`name_swe` VARCHAR(64), " +\
-                "`name_fi` VARCHAR(64), " +\
-                "`address_swe` VARCHAR(64), " +\
-                "`address_fi` VARCHAR(64), " +\
-                "`city_swe` VARCHAR(64), " +\
-                "`city_fi` VARCHAR(64), " +\
+                "`languageID` INT(1) NOT NULL, " +\
+                "`name` VARCHAR(64), " +\
+                "`address` VARCHAR(64), " +\
+                "`city` VARCHAR(64), " +\
+                "INDEX (`languageID`) USING BTREE, " \
                 "INDEX `FK_station` (`stationID`) USING BTREE, " +\
+                "INDEX (`stationID`, `languageID`) USING BTREE, " \
                 "CONSTRAINT `FK_station` FOREIGN KEY (`stationID`) " \
                 "REFERENCES `solita`.`city_stations` (`id`) ON DELETE CASCADE " \
             ") " +\
@@ -368,6 +397,7 @@ def init_tables():
 
     # Journeys
     # We don't need to specify names here, since they're already in other table
+    # Slapped indexes on each column cause its possible we need all of them, we can modify them later
     query = "CREATE TABLE IF NOT EXISTS `city_journeys` " \
             "( " \
                 "`id` INT(1) NOT NULL AUTO_INCREMENT, " \
@@ -378,10 +408,11 @@ def init_tables():
                 "`distance` FLOAT(12) NOT NULL, " \
                 "`duration` FLOAT(12) NOT NULL, " \
                 "PRIMARY KEY(`id`) USING BTREE, " \
+                "INDEX `stations` (`departure_station`, `return_station`) USING BTREE, " \
+                "INDEX (`distance`) USING BTREE, " \
+                "INDEX (`duration`) USING BTREE, " \
                 "INDEX (`departure`) USING BTREE, " \
-                "INDEX (`return`) USING BTREE, " \
-                "INDEX (`departure_station`) USING BTREE, " \
-                "INDEX (`return_station`) USING BTREE " \
+                "INDEX (`return`) USING BTREE " \
             ") " \
             "COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB;"
 
