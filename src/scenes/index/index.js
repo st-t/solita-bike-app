@@ -7,6 +7,10 @@ import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
 import { faAngleUp } from '@fortawesome/free-solid-svg-icons';
 
+var maxPage;
+var responses = 0;
+var dataRecieved = false;
+
 
 export default class index extends Component 
 {  
@@ -17,9 +21,16 @@ export default class index extends Component
         // Some states to keep our clients happy
         this.state = 
         {
-            example_state: 5000,
-            sort_columns: [false, false, false, false, false, false]
+            // If client wants to sort by a column
+            sort_columns: [false, false, false, false, false, false],
+            
+            // Data for each pages
+            currentPage: 1, pageEntries: 10, 
+            IDs: [], stations: [], returnStations: [], distances: [], durations: [], departures: []
         };
+        
+        // Handle pagination clicks
+        this.handlePage = this.handlePage.bind(this);
     }
 
     // Initialization(s) that requires DOM nodes should go here
@@ -45,7 +56,68 @@ export default class index extends Component
                 // We have some data 
                 if(obj.hasOwnProperty('connection'))
                 {
-                    console.log('>> socket response: ' + String(obj.connection) ); 
+                    console.log('>> socket response: ' + String(obj.connection) + ' #' + responses ); 
+                }
+
+                // We recieved journey data
+                if(obj.hasOwnProperty('journeys'))
+                {
+                    if(dataRecieved)
+                    {
+                        console.log('<< return');
+                        return;
+                    } 
+
+                    var i = 0;
+
+                    for (var key in obj.journeys) 
+                    {
+                        if(obj.journeys.hasOwnProperty(key)) 
+                        {
+                            i++;
+                            var id = key;
+                            this.state.IDs.push(id);
+
+                            for(var attr in obj.journeys[key]) 
+                            {
+                                //console.log(id + " " + attr + " -> " + obj.journeys[key][attr]);
+
+                                switch(attr)
+                                {
+                                    case "dstation": 
+                                    {
+                                        this.state.stations.push(obj.journeys[key][attr]);
+                                        break;
+                                    }
+                                    case "rstation": 
+                                    {
+                                        this.state.returnStations.push(obj.journeys[key][attr]);
+                                        break;
+                                    }
+                                    case "distance": 
+                                    {
+                                        this.state.distances.push(obj.journeys[key][attr]);
+                                        break;
+                                    }
+                                    case "duration":
+                                    {
+                                        this.state.durations.push(obj.journeys[key][attr]);
+                                        break;
+                                    }
+                                    case "departure":
+                                    {
+                                        this.state.departures.push(obj.journeys[key][attr]);
+                                        break;
+                                    }
+                                    default: break;
+                                }
+                            }
+                        }
+                    }
+                    responses += i;
+                    if(responses >= 100) dataRecieved = true;
+
+                    this.setState({currentPage: 1});
                 }
             }
         });
@@ -69,7 +141,85 @@ export default class index extends Component
         this.setState({sort_columns: arr});
     }
 
-    // Render the page <table className={`${styles.container} ${styles.container}`}>
+    // Renders journeys of selected page on the pagination
+    renderJourneys()
+    {
+        const { stations, currentPage, pageEntries } = this.state;
+
+        // Logic for paginating entries
+        const indexLast = currentPage * pageEntries;
+        const indexFirst = indexLast - pageEntries;
+        const currentEntries = stations.slice(indexFirst, indexLast);
+
+        const mapJourneys = currentEntries.map((station, index) => 
+        {
+            let idx = currentPage * pageEntries - pageEntries;
+            
+            return (
+                <ul key={idx + index}>
+                    <li >#{this.state.IDs[idx + index]}
+                        <p className={styles.journey}></p>
+                    </li>
+
+                    <li>{station}
+                        <p>Departure Station</p>
+                    </li>
+                    <li>{this.state.returnStations[idx + index]}
+                        <p>Return Station</p>
+                    </li>
+                    <li>{this.state.distances[idx + index]}
+                        <p>Distance</p>
+                    </li>
+                    <li>{this.state.durations[idx + index]}
+                        <p>Duration</p>
+                    </li>
+                    <li>{this.state.departures[idx + index]}
+                        <p>Departure</p>
+                    </li>
+                </ul>
+            );
+        });
+
+        return mapJourneys;
+    }
+
+    // Render page numbers (pagination)
+    renderPages()
+    {
+        const pageNumbers = [];
+        const { stations, pageEntries } = this.state;
+
+        for (let i = 1; i <= Math.ceil(stations.length / pageEntries); i++)
+            pageNumbers.push(i);
+
+        maxPage = pageNumbers.length;
+
+        const pages = pageNumbers.map(number => 
+        {
+            return (
+                <li className={`${this.state.currentPage === number ? styles.pageActive : styles.pageIncrement} `}
+                    key={number}
+                    id={number}
+                    onClick={this.handlePage}
+                >
+                    {number}
+                </li>
+            );
+        });
+
+        return pages;
+    }
+
+    // Handle page clicks
+    handlePage(event) 
+    {
+        this.setState({
+            currentPage: Number(event.target.id)
+        });
+    }
+
+    // Render the page 
+    // <table className={`${styles.container} ${styles.container}`}>
     render() 
     {
         return (
@@ -89,7 +239,7 @@ export default class index extends Component
                         </div>
 
                         <ul className={styles.list_header}>
-                            <li>Journey#
+                            <li>#
                                 { this.state.sort_columns[0] === true 
                                 ? <FontAwesomeIcon className={styles.sort_icon} icon={faAngleUp} onClick = { e => this.handleSort(e, this.state.sort_columns[0], 0)} /> 
                                 : <FontAwesomeIcon className={styles.sort_icon} icon={faAngleDown} onClick = { e => this.handleSort(e, this.state.sort_columns[0], 0)} /> }
@@ -125,25 +275,16 @@ export default class index extends Component
                                 : <FontAwesomeIcon className={styles.sort_icon} icon={faAngleDown} onClick = { e => this.handleSort(e, this.state.sort_columns[5], 5)} /> }
                             </li>
                         </ul>
-
-                        <ul>
-                            <li>010<p className={styles.journey}>Journey#</p></li>
-                            <li>Finland<p>Departure Station</p></li>
-                            <li>Finland<p>Return Station</p></li>
-                            <li>0123456789<p>Distance</p></li>
-                            <li>123<p>Duration</p></li>
-                            <li> Example of a list<p>Departure</p></li>
-                        </ul>
-
-                        <ul>
-                            <li>010<p className={styles.journey}>Journey#</p></li>
-                            <li>Finland<p>Departure Station</p></li>
-                            <li>Finland<p>Return Station</p></li>
-                            <li>0123456789<p>Distance</p></li>
-                            <li>123<p>Duration</p></li>
-                            <li> Example of a list<p>Departure</p></li>
-                        </ul>
+                        
+                        {/* Journey pagination */}
+                        {this.renderJourneys()}
+                        
                     </div>
+
+                    {/* Page numbers */}
+                    <ul className={styles.pages}>
+                        {this.renderPages()}
+                    </ul>
                 </div>
             </div>
         )

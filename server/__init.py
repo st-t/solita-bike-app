@@ -10,8 +10,6 @@ from flask_socketio import SocketIO as sio
 from flask import Flask, send_from_directory, request, jsonify
 
 
-
-
 # Compiled React directory (<parent>/build)
 static_index = '../build'
 
@@ -53,22 +51,54 @@ def handle_message(data):
     # Listen for socket messages 
     # A client has connected to our webpage
     if starts(data, '[connection]'):
+        
         print(' [#] Client loaded:', request.sid)
 
-        # Send clients their needed data
-        # Format our json data, round up some decimals
-        x = {
-            "connection": '200 OK'
-        }
-
-        json_response = json.dumps(x)
-
-        # Echo the json back to client
+        # Respond
+        r = {"connection": '200 OK'}
+        json_response = json.dumps(r)
         socketio.emit('message', json_response, to=request.sid)
 
+        # Send our client some data 
+        query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure " \
+                "FROM `city_journeys` j " \
+                "INNER JOIN `city_translations` t " \
+                "ON t.stationID = j.departure_station AND t.languageID=1 " \
+                "INNER JOIN `city_translations` tr " \
+                "ON tr.stationID = j.return_station AND tr.languageID=1 " \
+                "ORDER BY j.id LIMIT 100;"
+        
+        results = db.exec_query(query, [])
+
+        i = 0
+        x = {"journeys":{}}
+
+        # Loop all results
+        for row in results:
+            i += 1
+            idx = row[0]
+
+            # Append data into json array
+            x["journeys"][idx] = {
+                "dstation": row[1],
+                "rstation": row[2],
+                "distance": row[3],
+                "duration": row[4],
+                "departure": str(row[5])
+            }
+
+            # Echo json batch to client
+            # Don't echo everything at once since we don't wanna choke the client
+            if i == 20:
+                journey_data = json.dumps(x)
+                socketio.emit('message', journey_data, to=request.sid)
+
+                i = 0
+                x = {"journeys":{}}
 
 
-@app.route("/app")
+
+@app.route("/")
 def serve():
     # Client landed, render the index
     return send_from_directory(app.static_folder, 'index.html')

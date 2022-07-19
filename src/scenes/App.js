@@ -11,17 +11,17 @@ import styles from './styles.module.css';
 import useMightyMouse from 'react-hook-mighty-mouse';
 
 
-const Header  = ({ sqlStatus })   => {
-
+const Header = ({sqlStatus}) => 
+{
     // Tracks mouse movement to make the graphics move
     const {position: { client },} = useMightyMouse(true, 'trackElement');
 
     return (
     <>
-        <h1 className={anims.header_logo} data-text="City-bike-app">City-bike-app</h1>
+        <h1 className={anims.logo_head} data-text="City-bike-app">City-bike-app</h1>
         <small className={anims.sig}>Dev Academy pre-assignment ~ Samuli Taskila</small>
 
-        <div className={anims.header} id="trackElement">
+        <div className={anims.header_anim} id="trackElement">
 
             {/*  Background graphics 
             Man enough to say I ctrl+v'd this :-D */}
@@ -111,8 +111,7 @@ export default class App extends Component
                             <Route exact path="/" element = {
                                 <Index 
                                     data = {this.state.data} 
-                                    changeProps = {this.changeProps}
-                                />
+                                    changeProps = {this.changeProps} />
                             }>
                             </Route>
                             
@@ -120,8 +119,7 @@ export default class App extends Component
                             <Route exact path="/settings" element = { 
                                 <Settings
                                     data = {this.state.data} 
-                                    changeProps = {this.changeProps}
-                                />
+                                    changeProps = {this.changeProps}/>
                             }>
                             </Route>
                             
@@ -129,8 +127,7 @@ export default class App extends Component
                             <Route exact path="/stations" element = { 
                                 <Stations
                                     data = {this.state.data} 
-                                    changeProps = {this.changeProps}
-                                />
+                                    changeProps = {this.changeProps}/>
                             }>
                             </Route>
 

@@ -286,8 +286,13 @@ def scrape_journeys(console_log=False):
                             '\n Duration: {}'.format(data[7]))
                         
                         # Filter journeys we don't want to import 
+                        # Distance or duration is too low
                         if float(data[6]) < 10.0 or float(data[7]) < 10.0: 
                             continue 
+                        
+                        # Departure station is same as return station
+                        if data[4] == data[2]:
+                            continue
 
                         # Append data for batch query
                         journeys_batch.append( [
@@ -418,15 +423,3 @@ def init_tables():
 
     exec_query(query, [])
 
-
-
-if __name__ == '__main__':
-
-    # This will be removed later and merged with backend core file 
-
-    # Create db tables
-    init_tables()
-
-    # To import stations and journeys 
-    # scrape_stations()
-    # scrape_journeys()
