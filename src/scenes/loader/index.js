@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import styles from './index.module.css';
+import  {loadingMessages} from './loading_messages.js';
 
 
 export default class index extends Component {
@@ -10,7 +11,7 @@ export default class index extends Component {
                 <div className={styles.loader}>
                     <span className={styles.inner}></span>
                 </div>
-                <h1 className={styles.message}>hold on.. fetching some stuff !</h1>
+                <h1 className={styles.message}>{loadingMessages[Math.floor(Math.random()*loadingMessages.length)]}</h1>
                 
             </div>
         )

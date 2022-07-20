@@ -59,16 +59,67 @@ def handle_message(data):
         json_response = json.dumps(r)
         socketio.emit('message', json_response, to=request.sid)
 
-        # Send our client some data 
-        query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure " \
-                "FROM `city_journeys` j " \
-                "INNER JOIN `city_translations` t " \
-                "ON t.stationID = j.departure_station AND t.languageID=1 " \
-                "INNER JOIN `city_translations` tr " \
-                "ON tr.stationID = j.return_station AND tr.languageID=1 " \
-                "ORDER BY j.id LIMIT 100;"
+    # Client requested journey data
+    elif starts(data, '[journeys]') or starts(data, '[next]') or starts(data, '[last]'):
         
-        results = db.exec_query(query, [])
+        print(' [#] Received a command from', request.sid)
+
+        # Which page and how many entries to get 
+        order = ''
+        page_id = '0'
+        entries = '100'
+        data = data.split(' ')
+
+        if starts(data, '[next]'): 
+            page_id = str(data[1])
+            entries = str(data[2])
+        elif starts(data, '[journeys]'): 
+            entries = str(data[1])
+        elif starts(data, '[last]'): 
+            order = 'DESC'
+            entries = str(data[1])
+
+        # "Normal" query 
+        if not starts(data, '[last]'):
+            query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure " \
+                    "FROM `city_journeys` j " \
+                    "INNER JOIN `city_translations` t " \
+                    "ON t.stationID = j.departure_station AND t.languageID=1 " \
+                    "INNER JOIN `city_translations` tr " \
+                    "ON tr.stationID = j.return_station AND tr.languageID=1 " \
+                    "WHERE j.id > %s ORDER BY j.id {} LIMIT {};".format(order, entries)
+            
+            results = db.exec_query(query, [page_id])
+
+        # Client wants to see last page
+        # This gets complicated since we need to subquery last N rows, and then sort them upside-down
+        # We could sort them with python but I've decided to just create a longer query with double join since the query performance is good
+        else: 
+            query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure " \
+                    "FROM ( " \
+                        "SELECT j.* FROM `city_journeys` j " \
+                        "INNER JOIN `city_translations` t " \
+                        "ON t.stationID = j.departure_station AND t.languageID=1 " \
+                        "INNER JOIN `city_translations` tr " \
+                        "ON tr.stationID = j.return_station AND tr.languageID=1 " \
+                        "ORDER BY j.id DESC LIMIT {}".format(entries) + \
+                    ") j " \
+                    "INNER JOIN `city_translations` t " \
+                    "ON t.stationID = j.departure_station AND t.languageID=1 " \
+                    "INNER JOIN `city_translations` tr " \
+                    "ON tr.stationID = j.return_station AND tr.languageID=1 " \
+                    "ORDER BY j.id ASC LIMIT {};".format(entries)
+            
+            results = db.exec_query(query, [])
+
+
+        if not results:
+            print(' [#] No results.')
+
+            r = {"null": '404'}
+            json_response = json.dumps(r)
+            socketio.emit('message', json_response, to=request.sid)
+            return
 
         i = 0
         x = {"journeys":{}}
@@ -87,14 +138,15 @@ def handle_message(data):
                 "departure": str(row[5])
             }
 
-            # Echo json batch to client
-            # Don't echo everything at once since we don't wanna choke the client
+            # Echo data batch to client
             if i == 20:
                 journey_data = json.dumps(x)
                 socketio.emit('message', journey_data, to=request.sid)
 
                 i = 0
                 x = {"journeys":{}}
+            
+        print(' [#] Finished query for', request.sid)
 
 
 

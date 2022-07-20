@@ -6,7 +6,15 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
 import { faAngleUp } from '@fortawesome/free-solid-svg-icons';
+import { faAngleLeft } from '@fortawesome/free-solid-svg-icons';
+import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
+import { faCaretLeft } from '@fortawesome/free-solid-svg-icons';
+import { faCaretRight } from '@fortawesome/free-solid-svg-icons';
 
+var lastFetchID = 0;            // ID we last fetched
+var scrolledPage = 0;           // Used on pagination
+var fetchEntriesAmount = 100    // How many entries to fetch at a time 
+var calledLast = false;         // Load last page?
 
 
 export default class index extends Component 
@@ -22,8 +30,10 @@ export default class index extends Component
             sort_columns: [false, false, false, false, false, false],
             
             // Data for each pages
-            currentPage: 1, pageEntries: 10, expandJourney: 0,
-            IDs: [], stations: [], returnStations: [], distances: [], durations: [], departures: []
+            currentPage: 1, pageEntries: 20, expandJourney: 0,
+            IDs: [], stations: [], returnStations: [], distances: [], durations: [], departures: [],
+
+            displayFilters: false
         };
         
         // Handle pagination clicks
@@ -36,13 +46,24 @@ export default class index extends Component
     // Initialization(s) that requires DOM nodes should go here
     componentDidMount() 
     {
-        // Set loaded true
-        this.props.changeProps({isLoaded: true});
+        // Display loading message
+        this.props.changeProps({isLoaded: false});
+
+        lastFetchID = 0;
+        scrolledPage = 0;
+        fetchEntriesAmount = 100 
+        calledLast = false;
+
+        // Fetch journeys from database
+        // Called everytime client lands on index page but that's fine
+        // Queries are very fast since we're showing only 100 at a time and table structure is optimized
+        socket.send('[journeys] ' + fetchEntriesAmount);
 
         // Listen the server for messages
         socket.on('message', (msg) => 
         {
             this.setState({data:msg})
+            this.setState({displayFilters: false});
 
             // Message from socketio 
             let json_response = this.state.data; 
@@ -70,6 +91,7 @@ export default class index extends Component
                         {
                             i++;
                             var id = key;
+                            lastFetchID = id;
                             this.state.IDs.push(id);
 
                             for(var attr in obj.journeys[key]) 
@@ -108,7 +130,33 @@ export default class index extends Component
                             }
                         }
                     }
-                    this.setState({currentPage: 1});
+                    
+                    // Some logic for displaying correct page numbers 
+                    // Might look a bit confusing but its a done deal
+                    if(scrolledPage < 1)
+                        this.setState({currentPage: 1});
+                    else
+                        this.setState({currentPage: 1 + (this.state.pageEntries * scrolledPage)});
+
+                    if(calledLast)
+                    {
+                        var numPages = (fetchEntriesAmount / this.state.pageEntries);
+                        scrolledPage = Math.floor((lastFetchID / (this.state.pageEntries * numPages) ) );
+                        this.setState({currentPage: numPages});
+                    }
+                    else 
+                        this.setState({currentPage: 1});
+                    
+                    this.props.changeProps({isLoaded: true});
+                    this.setState({displayFilters: true});
+                }
+
+                // There was no results
+                // Return to last page 
+                if(obj.hasOwnProperty('null'))
+                {
+                    calledLast = true;
+                    socket.send('[last] ' + fetchEntriesAmount);
                 }
             }
         });
@@ -198,12 +246,19 @@ export default class index extends Component
         const { stations, pageEntries } = this.state;
 
         for (let i = 1; i <= Math.ceil(stations.length / pageEntries); i++)
-            pageNumbers.push(i);
+        {
+            // If we are on the first page, just do 1 2 3 4..
+            // Otherwise divide entires / pageEntries * how many times we scrolled to get the correct num
+            if(scrolledPage < 1)
+                pageNumbers.push(i);
+            else 
+                pageNumbers.push(i + ( (fetchEntriesAmount / pageEntries) * scrolledPage ) );
+        }
 
         const pages = pageNumbers.map(number => 
         {
             return (
-                <li className={`${this.state.currentPage === number ? styles.pageActive : styles.pageIncrement} `}
+                <li className={`${(this.state.currentPage + ((fetchEntriesAmount / pageEntries) * scrolledPage) ) === number ? styles.pageActive : styles.pageIncrement} `}
                     key={number}
                     id={number}
                     onClick={this.handlePage}
@@ -219,8 +274,11 @@ export default class index extends Component
     // Handle page clicks
     handlePage(event) 
     {
+        const { pageEntries } = this.state;
+        
+        // Logic for calculating current page
         this.setState({
-            currentPage: Number(event.target.id)
+            currentPage: Number(event.target.id) - ((fetchEntriesAmount / pageEntries) * scrolledPage)
         });
     }
 
@@ -231,12 +289,77 @@ export default class index extends Component
         if(num == this.state.expandJourney)
         {
             this.setState({expandJourney: 0 });
-            console.log('Closing expansion: ' + this.state.expandJourney + ' : ' + num);
             return; 
         }
 
         this.setState({expandJourney: num});
-        console.log('Expanding: ' + this.state.expandJourney + ' : ' + num);
+    }
+
+    // Client wants to return a page
+    previousPages(last)
+    {
+        // We are on the first page. We can't go back.
+        if(scrolledPage == 0)
+            return;
+
+        this.setState({currentPage: 1});
+        this.setState({IDs: []});
+        this.setState({stations: []});
+        this.setState({returnStations: []});
+        this.setState({distances: []});
+        this.setState({durations: []});
+        this.setState({departures: []});
+        this.setState({displayFilters: false});
+        this.props.changeProps({isLoaded: false});
+
+        // If client wants to scroll all the way to beginning
+        if(!last)
+        {
+            calledLast = false;
+            scrolledPage -= 1;
+            lastFetchID -= fetchEntriesAmount * 2;
+        }
+        else 
+        {
+            calledLast = false;
+            lastFetchID = 0;
+            scrolledPage = 0;
+        }
+
+        // Send the command to server
+        socket.send('[next] ' + lastFetchID + ' ' + fetchEntriesAmount);
+    }
+
+    // Client wants more pages, fetch them 
+    nextPages(last)
+    {
+        // We are on the very last page, don't go further.
+        if(calledLast)
+            return;
+
+        this.setState({currentPage: 1});
+        this.setState({IDs: []});
+        this.setState({stations: []});
+        this.setState({returnStations: []});
+        this.setState({distances: []});
+        this.setState({durations: []});
+        this.setState({departures: []});
+        this.setState({displayFilters: false});
+        this.props.changeProps({isLoaded: false});
+
+        if(!last)
+        {
+            calledLast = false;
+            scrolledPage += 1;
+            socket.send('[next] ' + lastFetchID + ' ' + fetchEntriesAmount);
+        }
+
+        // Client wants to see the very last page 
+        else 
+        {
+            calledLast = true;
+            socket.send('[last] ' + fetchEntriesAmount);
+        }
     }
 
     // Render the page 
@@ -250,12 +373,15 @@ export default class index extends Component
                     
                     <div className={styles.list}>
                         
-                        <div className={styles.searchWrap}>
-                            <div className={styles.search}>
-                                <input type="text" className={styles.searchTerm} placeholder="search" />
-                                <button type="submit" className={styles.searchButton}>
-                                    <FontAwesomeIcon className={styles.icon} icon={faSearch} />
-                                </button>
+                        {/* Hide filters / search if page is loading */}
+                        <div className={`${this.state.displayFilters ? styles.filters : styles.filters_hide} `} >
+                            <div className={styles.searchWrap}>
+                                <div className={styles.search}>
+                                    <input type="text" className={styles.searchTerm} placeholder="search" />
+                                    <button type="submit" className={styles.searchButton}>
+                                        <FontAwesomeIcon className={styles.icon} icon={faSearch} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -272,7 +398,7 @@ export default class index extends Component
                                 : <FontAwesomeIcon className={styles.sort_icon} icon={faAngleDown} onClick = { e => this.handleSort(e, this.state.sort_columns[1], 1)} /> }
                             </li>
 
-                            <li>Return Station 
+                            <li>Return Station  
                                 { this.state.sort_columns[2] === true 
                                 ? <FontAwesomeIcon className={styles.sort_icon} icon={faAngleUp} onClick = { e => this.handleSort(e, this.state.sort_columns[2], 2)} /> 
                                 : <FontAwesomeIcon className={styles.sort_icon} icon={faAngleDown} onClick = { e => this.handleSort(e, this.state.sort_columns[2], 2)} /> }
@@ -304,7 +430,23 @@ export default class index extends Component
 
                     {/* Page numbers */}
                     <ul className={styles.pages}>
+                        <li>
+                            <FontAwesomeIcon className={`${scrolledPage === 0 ? styles.pageSkipDeactivated : styles.pageSkip} `}
+                            icon={faCaretLeft} onClick = { () => this.previousPages(true)} />
+                        </li>
+                        <li>
+                            <FontAwesomeIcon className={`${scrolledPage === 0 ? styles.pageSkipDeactivated : styles.pageScroller} `}
+                            icon={faAngleLeft} onClick = { () => this.previousPages(false)} />
+                        </li>
                         {this.renderPages()}
+                        <li>
+                            <FontAwesomeIcon className={`${calledLast === true ? styles.pageSkipDeactivated : styles.pageScroller} `}
+                            icon={faAngleRight} onClick = { () => this.nextPages(false)} />
+                        </li>
+                        <li>
+                            <FontAwesomeIcon className={`${calledLast === true ? styles.pageSkipDeactivated : styles.pageSkip} `}
+                            icon={faCaretRight} onClick = { () => this.nextPages(true)} />
+                        </li>
                     </ul>
                 </div>
             </div>
