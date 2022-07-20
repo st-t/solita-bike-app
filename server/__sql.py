@@ -5,7 +5,7 @@
 
 import codecs
 import pymysql
-import random
+
 
 
 def exec_query(query, args=[], batch=False):

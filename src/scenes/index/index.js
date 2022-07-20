@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useState, useEffect } from 'react';
 import socket from '../../addons/socket';
 import styles from './index.module.css';
 import anims from '../anims.module.css';
@@ -7,9 +7,6 @@ import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
 import { faAngleUp } from '@fortawesome/free-solid-svg-icons';
 
-var maxPage;
-var responses = 0;
-var dataRecieved = false;
 
 
 export default class index extends Component 
@@ -25,12 +22,15 @@ export default class index extends Component
             sort_columns: [false, false, false, false, false, false],
             
             // Data for each pages
-            currentPage: 1, pageEntries: 10, 
+            currentPage: 1, pageEntries: 10, expandJourney: 0,
             IDs: [], stations: [], returnStations: [], distances: [], durations: [], departures: []
         };
         
         // Handle pagination clicks
         this.handlePage = this.handlePage.bind(this);
+
+        // Handle jorney entry clicks
+        this.handleJourneyExpansion = this.handleJourneyExpansion.bind(this);
     }
 
     // Initialization(s) that requires DOM nodes should go here
@@ -56,18 +56,12 @@ export default class index extends Component
                 // We have some data 
                 if(obj.hasOwnProperty('connection'))
                 {
-                    console.log('>> socket response: ' + String(obj.connection) + ' #' + responses ); 
+                    console.log('>> socket response: ' + String(obj.connection) ); 
                 }
 
                 // We recieved journey data
                 if(obj.hasOwnProperty('journeys'))
                 {
-                    if(dataRecieved)
-                    {
-                        console.log('<< return');
-                        return;
-                    } 
-
                     var i = 0;
 
                     for (var key in obj.journeys) 
@@ -114,9 +108,6 @@ export default class index extends Component
                             }
                         }
                     }
-                    responses += i;
-                    if(responses >= 100) dataRecieved = true;
-
                     this.setState({currentPage: 1});
                 }
             }
@@ -156,24 +147,41 @@ export default class index extends Component
             let idx = currentPage * pageEntries - pageEntries;
             
             return (
-                <ul key={idx + index}>
-                    <li >#{this.state.IDs[idx + index]}
+                <ul key={idx + index}
+                    id = {this.state.IDs[idx + index]} 
+                    onClick = { () => this.handleJourneyExpansion(this.state.IDs[idx + index])}>
+                    
+                    {/* When user clicks an entry => expand it */}
+                    <li className={`${this.state.expandJourney === this.state.IDs[idx + index] ? styles.entry_ex : styles.entry} `} >
+
+                        #{this.state.IDs[idx + index]}
                         <p className={styles.journey}></p>
+
+                        {/* Expanded content */}
+                        <div className = {`${this.state.expandJourney === this.state.IDs[idx + index] ? styles.entry_visible : styles.entry_hidden} `} >
+                            <div className = {`${this.state.expandJourney === this.state.IDs[idx + index] ? styles.entry_content_l : styles.entry_hidden} `}>
+                                content_left
+                            </div>
+
+                            <div className={`${this.state.expandJourney === this.state.IDs[idx + index] ? styles.entry_content_r : styles.entry_hidden} `}>
+                                content_right
+                            </div>
+                        </div>
                     </li>
 
-                    <li>{station}
+                    <li className={styles.entry}>{station}
                         <p>Departure Station</p>
                     </li>
-                    <li>{this.state.returnStations[idx + index]}
+                    <li className={styles.entry}>{this.state.returnStations[idx + index]}
                         <p>Return Station</p>
                     </li>
-                    <li>{this.state.distances[idx + index]}
+                    <li className={styles.entry}>{this.state.distances[idx + index]}
                         <p>Distance</p>
                     </li>
-                    <li>{this.state.durations[idx + index]}
+                    <li className={styles.entry}>{this.state.durations[idx + index]}
                         <p>Duration</p>
                     </li>
-                    <li>{this.state.departures[idx + index]}
+                    <li className={styles.entry}>{this.state.departures[idx + index]}
                         <p>Departure</p>
                     </li>
                 </ul>
@@ -191,8 +199,6 @@ export default class index extends Component
 
         for (let i = 1; i <= Math.ceil(stations.length / pageEntries); i++)
             pageNumbers.push(i);
-
-        maxPage = pageNumbers.length;
 
         const pages = pageNumbers.map(number => 
         {
@@ -216,6 +222,21 @@ export default class index extends Component
         this.setState({
             currentPage: Number(event.target.id)
         });
+    }
+
+    // Handle journey clicks
+    handleJourneyExpansion = (num) => { 
+        
+        // Client clicked an expanded column => close it 
+        if(num == this.state.expandJourney)
+        {
+            this.setState({expandJourney: 0 });
+            console.log('Closing expansion: ' + this.state.expandJourney + ' : ' + num);
+            return; 
+        }
+
+        this.setState({expandJourney: num});
+        console.log('Expanding: ' + this.state.expandJourney + ' : ' + num);
     }
 
     // Render the page 
