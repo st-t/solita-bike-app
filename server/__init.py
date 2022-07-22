@@ -139,7 +139,7 @@ def handle_message(data):
             }
 
             # Echo data batch to client
-            if i == 20:
+            if i == 100:
                 journey_data = json.dumps(x)
                 socketio.emit('message', journey_data, to=request.sid)
 
