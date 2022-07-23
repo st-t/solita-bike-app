@@ -1,0 +1,415 @@
+
+.list ul:nth-child(odd) {
+    background-color:rgba(27, 24, 24, 0.445);
+}
+
+.list ul:nth-child(odd):hover {
+    background-color:rgba(8, 53, 12, 0.363);
+    transition: 0.3s;
+}
+
+.list ul:nth-child(even):hover {
+    background-color:rgba(33, 47, 51, 0.363);
+    transition: 0.3s;
+}
+
+.list ul:nth-child(even) {
+    background-color:rgba(24, 43, 32, 0.384);
+}
+
+.pageIncrement:hover  {
+    color: rgb(243, 243, 243) !important;
+    text-decoration: none;
+}
+
+.pageActive  {
+    color: rgba(28, 233, 1, 0.753) !important;
+    text-decoration: none;
+}
+
+.pageIncrement  {
+    color: rgba(228, 228, 228, 0.411) !important;
+    text-decoration: none;
+}
+
+.pages {
+    list-style: none;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    font-size: 45px;
+    position: relative;
+    padding-top: 30px;
+    padding-bottom: 30px;
+    width: 80%;
+    margin: auto;
+    align-items: center;
+    justify-content: center;
+    scrollbar-color: rgba(19, 224, 19, 0.514) rgb(17, 44, 17);
+    scrollbar-width: thin;
+}
+
+.pages > li {
+    margin-right: 0.3em;
+    user-select: none;
+    cursor: pointer;
+}
+
+.pageScroller {
+    color: rgb(100, 100, 100);
+}
+
+.pageSkip {
+    color: rgb(61, 61, 61);
+}
+
+.pageSkipDeactivated {
+    cursor: normal !important;
+    color: rgba(161, 21, 21, 0.671);
+}
+
+.pageScroller:hover {
+    color: rgb(255, 255, 255);
+    transition: 0.2s;
+}
+
+.pageSkip:hover {
+    color: rgb(255, 255, 255);
+    transition: 0.2s;
+}
+
+.list {
+    display:table;
+    margin:auto;
+    padding-top: 5%;
+    left: 0%;
+    width: 90%;
+    position: relative;
+    word-break: initial;
+    text-overflow: ellipsis;
+}
+
+.list ul {
+    display: table-row;
+    user-select: none;
+    cursor: pointer;
+
+    box-shadow: 0 0 15px 0px rgba(45, 218, 29, 0.233);
+    clip-path: inset(0px -15px 0px -15px);
+}
+
+
+
+.list ul:first-child li {
+    background-color:rgba(19, 91, 133, 0.062);
+    color:#fff;
+}
+
+.list ul li:first-child  {
+    position: relative;
+    display: inline-block;
+    max-width: 60px;
+}
+
+.list ul > li {
+    display: table-cell;
+    padding:.5em 1em;
+    min-width: 10px;
+}
+
+.list ul p {
+    display: none;
+}
+
+.list .list_header li:first-child {
+    margin: 0.6rem;
+}
+
+.sort_icon {
+    position: absolute;
+    margin-left: 10px;
+    padding-top: 3px;
+    padding: 2px;
+    opacity: 0.5;
+}
+
+.entry {
+    transition: 1.3s;
+}
+
+/* When user clicks a list entry => expand it */
+.entry_ex {
+    margin-bottom: 270px;
+    transition: 1.3s;
+}
+
+.entry_visible {
+    margin-bottom: 100px;
+    display: block;
+    position: absolute;
+    opacity: 1;
+    transition: 1.3s;
+
+    width: 680px;
+    height: 270px;
+
+    border-color: red;
+    border-style: dotted;
+}
+
+.entry_hidden {
+    opacity: 0;
+    position: absolute;
+    margin-bottom: 0px;
+    transition: 0.4s;
+}
+
+.entry_content_l {
+    position: absolute;
+    width: 300px;
+    height: 250px;
+    padding: 10px;
+    margin-bottom: 100px;
+
+    border-color: violet;
+    border-style: dotted;
+
+    animation: fadeIn ease 3s;
+    -webkit-animation: fadeIn ease 3s;
+    -moz-animation: fadeIn ease 3s;
+    -o-animation: fadeIn ease 3s;
+    -ms-animation: fadeIn ease 3s;
+    transition: 2.4s;
+}
+
+.entry_content_r {
+    float: right;
+    width: 300px;
+    height: 250px;
+    margin-bottom: 100px;
+    padding: 10px;
+
+    border-color: violet;
+    border-style: dotted;
+
+    animation: fadeIn ease 3s;
+    -webkit-animation: fadeIn ease 3s;
+    -moz-animation: fadeIn ease 3s;
+    -o-animation: fadeIn ease 3s;
+    -ms-animation: fadeIn ease 3s;
+    transition: 2.4s;
+}
+
+
+
+.search {
+    width: 100%;
+    position: relative;
+    display: flex;
+}
+
+.searchWrap {
+    width: 300px;
+    margin: auto;
+    transform: translate(-50%, -50%);
+    left: 86%;
+    top: 3vw;
+    position: absolute;
+}
+
+.searchTerm {
+    width: 100%;
+    border: 3px solid #07961a57;
+    border-right: none;
+    padding: 5px;
+    height: 20px;
+    border-radius: 5px 0 0 5px;
+    outline: none;
+    color: #ebebebb2;
+    
+    background-color: rgba(8, 19, 6, 0.356);
+    transition: 0.3s;
+}
+
+.searchTerm:focus{
+    color: #d8d8d8;
+    box-shadow: 0 0 10px #9eedb27e;
+    transition: 0.3s;
+}
+
+.searchButton {
+    width: 40px;
+    height: 36px;
+    border: 1px solid #0b4923;
+    background: #2ee20a6c;
+    text-align: center;
+    color: rgb(12, 8, 8);
+    border-radius: 0 5px 5px 0;
+    cursor: pointer;
+    font-size: 20px;
+    transition: 0.3s;
+}
+
+.searchButton:active {
+    background: #26ff00be;
+    box-shadow: 0 0 10px #9eedb27e;
+    transition: 0.1s;
+}
+
+@media screen and (max-width:1316px) {
+    .searchWrap {
+        left: 86%;
+        top: 30px;
+        position: absolute;
+    }
+}
+
+@media screen and (min-width:1400px) {
+
+    .list {
+        width: 85%;
+    }
+
+    .searchWrap {
+    }
+}
+
+
+
+@media screen and (max-width:1120px) {
+    .list {
+        width: 95%;
+        font-size: 20px;
+    }
+
+    .searchWrap {
+        left: 84%;
+        top: 25px;
+        position: absolute;
+    }
+}
+
+/* Mobile */
+@media screen and (max-width:1014px) {
+
+    .list .list_header {
+        display: none;
+    }
+
+    .list ul p {
+        display: block;
+    }
+
+    .container {
+        margin-top: 90px;
+    }
+    
+    .searchWrap {
+        width: 35%;
+        left: 80%;
+        position: absolute;
+    }
+
+    .list {
+        width: 90%;
+    }
+
+    .list ul {
+        border:solid 1px #ccc;
+        display:block;
+        list-style:none;
+        margin:1em;
+        padding:.5em 1.4em;
+    }
+
+    .list ul:first-child {
+        background-color:#444;
+        color:#fff;
+    }
+
+    .list ul > li {
+        display:block;
+        padding:.25em 0;
+        text-align: right;
+    }
+
+    .list ul:nth-child(odd) > li + li {
+        border-top:solid 1px #ccc;
+    }
+
+    .list ul:nth-child(even) > li + li {
+        border-top:solid 1px #eee;
+    }
+
+    .list ul li p:first-child {
+        text-align: left;
+        position: relative;
+    }
+
+    .list ul > li:before {
+        color:rgb(255, 255, 255);
+        content: attr(data-label);
+        display: inline-block;
+        font-size: 80%;
+        font-weight: bold;
+        text-transform: capitalize;
+        vertical-align: top;
+        width: 0%;
+    }
+
+    .list p {
+        margin:-1em 0 0 0%;
+        bottom: 7px;
+        position: relative;
+        text-align: left;
+    }
+
+    .list ul li:first-child  {
+        max-width: 80px;
+    }
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@-moz-keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@-webkit-keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@-o-keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@-ms-keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}

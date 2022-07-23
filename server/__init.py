@@ -138,14 +138,18 @@ def handle_message(data):
                 "departure": str(row[5])
             }
 
-            # Echo data batch to client
+            # Echo data chunk to client
             if i == 100:
                 journey_data = json.dumps(x)
                 socketio.emit('message', journey_data, to=request.sid)
 
                 i = 0
                 x = {"journeys":{}}
-            
+        
+        if i:
+            journey_data = json.dumps(x)
+            socketio.emit('message', journey_data, to=request.sid)
+
         print(' [#] Finished query for', request.sid)
 
 

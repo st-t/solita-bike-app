@@ -37,17 +37,21 @@ export default class index extends Component
             currentPage: 1, pageEntries: 20, expandJourney: 0,
             displayFilters: false, expandFilters: false, calledLast: false, scrolledPage: 0
         };
-
-        // Handle props
+        
         this.changeProps = this.changeProps.bind(this);
+        this.changeLoading = this.changeLoading.bind(this);
     }
 
     changeProps = (data) => {
         this.setState(data);
     }
 
+    changeLoading = (loadingState) => {
+        this.props.changeProps({isLoaded: loadingState});
+    }
+
     // Initialization(s) that requires DOM nodes should go here
-    componentDidMount() 
+    async componentDidMount() 
     {
         // Display loading message
         this.props.changeProps({isLoaded: false});
@@ -56,14 +60,24 @@ export default class index extends Component
         this.setState({fetchEntriesAmount: 100})
         this.setState({scrolledPage: 0})
         this.setState({calledLast: false})
+        
+        // Pull some state data to ease the code 
+        const { 
+            calledLast, 
+            scrolledPage, 
+            pageEntries,
+            fetchEntriesAmount,
+            lastFetchID
+
+        } = this.state;
 
         // Fetch journeys from database
         // Called everytime client lands on index page but that's fine
         // Queries are very fast since we're showing only 100 at a time and table structure is optimized
-        socket.send('[journeys] ' + this.state.fetchEntriesAmount);
+        socket.send('[journeys] ' + fetchEntriesAmount);
 
         // Listen the server for messages
-        socket.on('message', (msg) => 
+        socket.on('message', async (msg) => 
         {
             this.setState({data:msg})
             this.setState({displayFilters: false});
@@ -91,18 +105,18 @@ export default class index extends Component
                     this.props.changeProps({isLoaded: false});
 
                     // Handle json data
-                    this.handleServerMessage(obj);
+                    await this.handleServerMessage(obj);
                     
                     // Some logic for displaying correct page numbers 
-                    if(this.state.scrolledPage < 1)
+                    if(scrolledPage < 1)
                         this.setState({currentPage: 1});
                     else
-                        this.setState({currentPage: 1 + (this.state.pageEntries * this.state.scrolledPage)});
+                        this.setState({currentPage: 1 + (pageEntries * scrolledPage)});
 
-                    if(this.state.calledLast)
+                    if(calledLast)
                     {
-                        var numPages = (this.state.fetchEntriesAmount / this.state.pageEntries);
-                        this.setState( { scrolledPage: Math.floor( (this.state.lastFetchID / (this.state.pageEntries * numPages) ) ) } );
+                        var numPages = (fetchEntriesAmount / pageEntries);
+                        this.setState({ scrolledPage: Math.floor( (lastFetchID / (pageEntries * numPages) ) ) });
                         this.setState({currentPage: numPages});
                     }
                     else 
@@ -117,25 +131,27 @@ export default class index extends Component
                 if(obj.hasOwnProperty('null'))
                 {
                     this.setState({calledLast: true});
-                    socket.send('[last] ' + this.state.fetchEntriesAmount);
+                    socket.send('[last] ' + fetchEntriesAmount);
                 }
             }
         });
     }
 
     // Handle server response
-    handleServerMessage = (obj) => 
+    async handleServerMessage(obj) 
     {
-        for (var key in obj.journeys) 
-        {
-            if(obj.journeys.hasOwnProperty(key)) 
-            {
-                //i++;
-                var id = key;
-                this.setState({lastFetchID: id})
-                this.state.column_data[0].push(id);
+        var lastID = 0;
+        const { column_data } = this.state;
 
-                for(var attr in obj.journeys[key]) 
+        for(var key in obj.journeys) 
+        {
+            if( obj.journeys.hasOwnProperty(key) ) 
+            {
+                lastID = id;
+                var id = key;
+                column_data[0].push(id);
+
+                for( var attr in obj.journeys[key] ) 
                 {
                     //console.log(id + " " + attr + " -> " + obj.journeys[key][attr]);
 
@@ -143,27 +159,27 @@ export default class index extends Component
                     {
                         case "dstation": 
                         {
-                            this.state.column_data[1].push(obj.journeys[key][attr]);
+                            column_data[1].push( obj.journeys[key][attr] );
                             break;
                         }
                         case "rstation": 
                         {
-                            this.state.column_data[2].push(obj.journeys[key][attr]);
+                            column_data[2].push( obj.journeys[key][attr] );
                             break;
                         }
                         case "distance": 
                         {
-                            this.state.column_data[3].push(obj.journeys[key][attr]);
+                            column_data[3].push( obj.journeys[key][attr] );
                             break;
                         }
                         case "duration":
                         {
-                            this.state.column_data[4].push(obj.journeys[key][attr]);
+                            column_data[4].push( obj.journeys[key][attr] );
                             break;
                         }
                         case "departure":
                         {
-                            this.state.column_data[5].push(obj.journeys[key][attr]);
+                            column_data[5].push( obj.journeys[key][attr] );
                             break;
                         }
                         default: break;
@@ -171,6 +187,8 @@ export default class index extends Component
                 }
             }
         }
+
+        if(lastID++) this.setState({lastFetchID: lastID});
     }
 
     // Client wants to see settings 
@@ -184,6 +202,8 @@ export default class index extends Component
     // <table className={`${styles.container} ${styles.container}`}>
     render() 
     {
+        const { displayFilters, expandFilters } = this.state;
+
         return (
             <div className={anims.fade_class}>
 
@@ -192,7 +212,7 @@ export default class index extends Component
                     <div className={styles.filter_list}>
                         
                         {/* Hide filters / search if page is loading */}
-                        <div className={`${this.state.displayFilters ? styles.filters : styles.filters_hide} `} >
+                        <div className={`${displayFilters ? styles.filters : styles.filters_hide} `} >
 
                             {/* When user clicks cogwheel => expand it */}
                             <div>
@@ -204,8 +224,8 @@ export default class index extends Component
                             <div className={styles.journey_filters}>
 
                                 {/* Expanded content */}
-                                <div className = {`${this.state.expandFilters === false ? styles.filters_visible : styles.filters_hidden} `} >
-                                    <div className = {`${this.state.expandFilters === false ? styles.filters_content_l : styles.filters_hidden} `}>
+                                <div className = {`${expandFilters === true ? styles.filters_visible : styles.filters_hidden} `} >
+                                    <div className = {`${expandFilters === true ? styles.filters_content_l : styles.filters_hidden} `}>
 
                                         <ul>
                                             <li>
@@ -261,7 +281,7 @@ export default class index extends Component
                     </div>
                     
                     {/* Render journeys */}
-                    <NewList data = {this.state} changeProps = {this.changeProps}  />
+                    <NewList data = {this.state} changeProps = {this.changeProps} changeLoading = {this.changeLoading}  />
                     
                 </div>
             </div>
