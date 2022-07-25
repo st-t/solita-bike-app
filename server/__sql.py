@@ -64,6 +64,10 @@ def scrape_stations(console_log=False):
         )
 
     - description : reads stations file and inserts data to database
+
+    associated files (hardcoded since reading custom datasets goes beyond the purpose of this app) :
+    'server/datasets/datasets/Helsingin_ja_Espoon_kaupunkipyöräasemat_avoin.csv'
+
     - return : none
     """
 
@@ -217,6 +221,11 @@ def scrape_journeys(console_log=False):
     - description :
     reads journey dataset(s), filters and inserts data to database
     this function will take a few minutes to execute (around 3 million rows & 3 files)
+
+    associated files (hardcoded since reading custom datasets goes beyond the purpose of this app) :
+    'server/datasets/datasets/2021-05.csv'
+    'server/datasets/datasets/2021-06.csv'
+    'server/datasets/datasets/2021-07.csv'
 
     - return : none
     """

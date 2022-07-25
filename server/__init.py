@@ -152,6 +152,10 @@ def handle_message(data):
 
         print(' [#] Finished query for', request.sid)
 
+    # We received json data
+    if starts(data, '{'):
+        print('got: ', data)
+
 
 
 @app.route("/")

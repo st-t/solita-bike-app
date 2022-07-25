@@ -238,6 +238,7 @@ export default class NewList extends Component {
         }
 
         // Send the command to server
+        console.log('called previous page, last id: ' + setFetch);
         socket.send('[next] ' + setFetch + ' ' + fetchEntriesAmount);
     }
 
@@ -262,6 +263,8 @@ export default class NewList extends Component {
         {
             this.props.changeProps({calledLast: false});
             this.props.changeProps({scrolledPage: scrolledPage+1});
+
+            console.log('called next page, last id: ' + lastFetchID);
             socket.send('[next] ' + lastFetchID + ' ' + fetchEntriesAmount);
         }
 
@@ -269,6 +272,7 @@ export default class NewList extends Component {
         else 
         {
             this.props.changeProps({calledLast: true});
+            console.log('called last page, calledLast: ' + calledLast);
             socket.send('[last] ' + fetchEntriesAmount);
         }
     }
@@ -332,20 +336,20 @@ export default class NewList extends Component {
                 <ul className={styles.pages}>
                     <li>
                         <FontAwesomeIcon className={`${scrolledPage === 0 ? styles.pageSkipDeactivated : styles.pageSkip} `}
-                        icon={faCaretLeft} onClick = { () => this.previousPages(true) } />
+                        icon={faCaretLeft} size="xs" onClick = { () => this.previousPages(true) } />
                     </li>
                     <li>
                         <FontAwesomeIcon className={`${scrolledPage === 0 ? styles.pageSkipDeactivated : styles.pageScroller} `}
-                        icon={faAngleLeft} onClick = { () => this.previousPages(false) } />
+                        icon={faAngleLeft} size="xs" onClick = { () => this.previousPages(false) } />
                     </li>
                     {this.renderPages()}
                     <li>
                         <FontAwesomeIcon className={`${calledLast === true ? styles.pageSkipDeactivated : styles.pageScroller} `}
-                        icon={faAngleRight} onClick = { () => this.nextPages(false) } />
+                        icon={faAngleRight} size="xs" onClick = { () => this.nextPages(false) } />
                     </li>
                     <li>
                         <FontAwesomeIcon className={`${calledLast === true ? styles.pageSkipDeactivated : styles.pageSkip} `}
-                        icon={faCaretRight} onClick = { () => this.nextPages(true) } />
+                        icon={faCaretRight} size="xs" onClick = { () => this.nextPages(true) } />
                     </li>
                 </ul>
             </>
