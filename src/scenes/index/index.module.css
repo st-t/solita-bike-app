@@ -368,3 +368,17 @@
     box-shadow: 2px 0 0 white, 4px 0 0 white, 4px -2px 0 white, 4px -4px 0 white, 4px -6px 0 white, 4px -8px 0 white;
     transform: rotate(45deg);
 }
+
+.hide_res {
+    display: none;
+}
+
+.no_results {
+    position: relative;
+    width: 100%;
+    margin: auto;
+    color: red;
+    font-size: 35px;
+    text-align: center;
+    text-overflow: ellipsis;
+}

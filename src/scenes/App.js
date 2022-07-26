@@ -98,9 +98,9 @@ export default class App extends Component
                         <div className={styles.header_links}>
 
                             <li className={styles.navitem}>
-                                <Link to="/" className={styles.navlink} >Home</Link>
-                                <Link to="/settings" className={styles.navlink} >Settings</Link>
+                                <Link to="/" className={styles.navlink} >Journeys</Link>
                                 <Link to="/stations" className={styles.navlink} >Stations</Link>
+                                <Link to="/settings" className={styles.navlink} >Settings</Link>
                             </li>
                         </div>
                         

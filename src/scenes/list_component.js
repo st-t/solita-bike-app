@@ -28,6 +28,7 @@ export default class NewList extends Component {
         this.handleColumnExpansion = this.handleColumnExpansion.bind(this);
     }
 
+    // Initialization(s) that requires DOM nodes should go here
     componentDidMount() 
     {
         //console.log('data:' + this.props.data.column_data[0][0] ); 
@@ -37,15 +38,32 @@ export default class NewList extends Component {
     handleSort(el, state_var, column)
     {
         var arr = [];
+        var had_res = false;
         const { columns } = this.props.data;
 
         // Loop column indexes
         for(let i=0 ; i <= columns.length ; i++)
         {
-            // This will set all other columns false (except the one client clicked)
-            // since we are not sorting 2 columns at the same time 
+            // This will set all other columns false
+            // If none is true, sort by ID 
             if(!(i===column) && el) arr.push(false);
-            else arr.push(!state_var);
+            else 
+            {
+                arr.push(!state_var);
+
+                if(!state_var) 
+                {
+                    had_res = true;
+                    this.props.sortCallback(i+1);
+                }
+            }
+        }
+        
+        // Sort by ID by default
+        if(!had_res)
+        {
+            arr[0] = true;
+            this.props.sortCallback(1);
         }
 
         // Set the state array that we just made 
@@ -68,7 +86,7 @@ export default class NewList extends Component {
             return (
                 <li key={index}>{string}
                 { this.props.data.sort_columns[index] === true 
-                ? <FontAwesomeIcon className={styles.sort_icon} icon={faAngleUp} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} /> 
+                ? <FontAwesomeIcon className={styles.sort_icon_active} icon={faAngleUp} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} /> 
                 : <FontAwesomeIcon className={styles.sort_icon} icon={faAngleDown} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} /> }
                 </li>
             );
@@ -213,33 +231,49 @@ export default class NewList extends Component {
     // Client wants to return a page
     previousPages(last)
     {
-        const { fetchEntriesAmount, scrolledPage, lastFetchID } = this.props.data;
+        const { 
+            scrolledPage, 
+            firstRow, 
+            wentToLast, 
+            actualScrolled,
+            list_type 
+        } = this.props.data;
 
         // We are on the first page. We can't go back.
         if(scrolledPage === 0) return;
 
         this.resetListData();
-        var setFetch = (lastFetchID - fetchEntriesAmount * 2);
+        var setFetch = (firstRow);
+        this.props.changeProps({goingToLast: false});
 
         // Client wants to see previous page
         if(!last)
         {
+            if(wentToLast) var scroll = actualScrolled+1;
+            else var scroll = actualScrolled-1;
+            var var_scrolled = scrolledPage-1;
+
+            this.props.changeLoading(false);
             this.props.changeProps({calledLast: false});
-            this.props.changeProps({scrolledPage: (scrolledPage-1)});
             this.props.changeProps({lastFetchID: setFetch});
+            this.props.changeProps({actualScrolled: scroll});
+            this.props.changeProps({scrolledPage: var_scrolled});
         }
         else 
         {
-            // Client wants to see the first page so set lastFetch to 0 and call next
-            setFetch = 0 
+            // Client wants to see the first page
+            var_scrolled = 0;
             this.props.changeProps({lastFetchID: 0});
             this.props.changeProps({scrolledPage: 0});
             this.props.changeProps({calledLast: false});
+            this.props.changeProps({scrolledPage: var_scrolled});
+            this.props.changeProps({actualScrolled: var_scrolled});
+            this.props.applyFilters();
+            return;
         }
 
-        // Send the command to server
-        console.log('called previous page, last id: ' + setFetch);
-        socket.send('[next] ' + setFetch + ' ' + fetchEntriesAmount);
+        if(list_type === 'journey')
+            this.prepareJourneyRequest(wentToLast, setFetch, true, scroll);
     }
 
     // Client wants more pages, fetch them 
@@ -248,33 +282,105 @@ export default class NewList extends Component {
         const { 
             calledLast, 
             scrolledPage, 
-            lastFetchID,
-            fetchEntriesAmount
-
+            lastFetchID, 
+            actualScrolled, 
+            wentToLast,
+            list_type
         } = this.props.data;
 
         // We are on the very last page, don't go further.
         if(calledLast) return;
 
         this.resetListData();
+        this.props.changeProps({goingToLast: true});
+
+        var toLast = wentToLast;
+        var endResults = false;
+        
+        // Client scrolled to the last pages
+        if(wentToLast)
+        {
+            var scroll = actualScrolled-1;
+            if( !(scroll < 0) ) var var_scrolled = scrolledPage+1;
+            else 
+            {
+                // Client wants to go to next page but are on the very last page 
+                scroll = 0;
+                endResults = true;
+                var var_scrolled = scrolledPage;
+                this.props.changeProps({calledLast: true});
+            }
+        }
+        else 
+        {
+            var scroll = actualScrolled+1;
+            var var_scrolled = scrolledPage+1;
+        }
 
         // Client wants to see next page 
         if(!last)
         {
-            this.props.changeProps({calledLast: false});
-            this.props.changeProps({scrolledPage: scrolledPage+1});
-
-            console.log('called next page, last id: ' + lastFetchID);
-            socket.send('[next] ' + lastFetchID + ' ' + fetchEntriesAmount);
+            this.props.changeLoading(false);
+            this.props.changeProps({actualScrolled: scroll});
+            this.props.changeProps({scrolledPage: var_scrolled});
+            if(!endResults) this.props.changeProps({calledLast: false});
         }
 
         // Client wants to see the very last page 
         else 
         {
+            toLast = true;
+            var scroll = 0;
+            var var_scrolled = 0;
+            this.props.changeLoading(false);
             this.props.changeProps({calledLast: true});
-            console.log('called last page, calledLast: ' + calledLast);
-            socket.send('[last] ' + fetchEntriesAmount);
+            this.props.changeProps({wentToLast: true});
+            this.props.changeProps({actualScrolled: scroll});
         }
+        
+        if(list_type === 'journey')
+            this.prepareJourneyRequest(toLast, lastFetchID, false, scroll);
+    }
+
+    // Sends a request to server 
+    prepareJourneyRequest(val, setFetch, prevPage, var_scrolled=0)
+    {
+        const { 
+            fetchEntriesAmount,
+            filterMeters, filterSeconds,
+            meterUnit, timeUnit,
+            overSeconds, overMeters,
+            metersChecked, secondsChecked, 
+            sortColumn, search
+
+        } = this.props.data;
+
+        const obj = 
+        {
+            type: 'journeys',
+            last: val,
+            prev: prevPage,
+            distance: 
+            {
+                metersFilter: metersChecked, 
+                over: overMeters,
+                unit: meterUnit,
+                amount: filterMeters
+            },
+            duration: 
+            {
+                secondsFilter: secondsChecked,
+                over: overSeconds,
+                unit: timeUnit,
+                amount: filterSeconds
+            },
+            limit: fetchEntriesAmount,
+            scrolled: var_scrolled,
+            lastID: setFetch,
+            sort: sortColumn,
+            search: search
+        };
+        this.props.constructRequest(obj);
     }
 
     // Handle page clicks
@@ -288,18 +394,38 @@ export default class NewList extends Component {
         });
     }
 
-    // Clear list data, set loading screen true
+    // Clear list data
     resetListData()
     {
-        const { column_data } = this.props.data;
-        
         const arraylist = [];
+        const { column_data } = this.props.data;
         for (let i = 0; i < column_data.length; i++) arraylist.push( [] );
-
-        this.props.changeProps({column_data: arraylist});
+        
         this.props.changeProps({currentPage: 1});
         this.props.changeProps({displayFilters: false});
-        this.props.changeLoading(false);
+        this.props.changeProps({displayNoResults: false});
+        this.props.changeProps({column_data: arraylist});
+    }
+
+    // Client is writing on search input
+    handleSearchInput(e)
+    {
+        let input;
+        input = e.target.value;
+        this.props.changeProps({search: input});
+
+        if(e.key === 'Enter') 
+        {
+            this.props.searchCallback(input);
+            this.props.changeProps({displayNoResults: false});
+        }
+    }
+
+    // Client clicked search button 
+    handleSearchBtn(e)
+    {
+        this.props.changeProps({displayNoResults: false});
+        this.props.searchCallback(this.props.data.search);
     }
     
     // Render the component
@@ -315,8 +441,13 @@ export default class NewList extends Component {
                     <div className={`${displayFilters ? styles.filters : styles.filters_hide} `} >
                         <div className={styles.searchWrap}>
                             <div className={styles.search}>
-                                <input type="text" className={styles.searchTerm} placeholder="search" />
-                                <button type="submit" className={styles.searchButton}>
+
+                                <input type="text" 
+                                onKeyDown={this.handleSearchInput.bind(this)} 
+                                onChange={this.handleSearchInput.bind(this)} 
+                                className={styles.searchTerm} placeholder="search" />
+
+                                <button type="submit" className={styles.searchButton} onClick={this.handleSearchBtn.bind(this)} >
                                     <FontAwesomeIcon className={styles.icon} icon={faSearch} />
                                 </button>
                             </div>

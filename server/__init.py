@@ -59,102 +59,227 @@ def handle_message(data):
         json_response = json.dumps(r)
         socketio.emit('message', json_response, to=request.sid)
 
-    # Client requested journey data
-    elif starts(data, '[journeys]') or starts(data, '[next]') or starts(data, '[last]'):
-        
-        print(' [#] Received a command from', request.sid)
+    # We received a request from a client
+    if starts(data, '{'):
 
-        # Which page and how many entries to get 
-        order = ''
-        page_id = '0'
-        entries = '100'
-        data = data.split(' ')
+        x = json.loads(data)
 
-        if starts(data, '[next]'): 
-            page_id = str(data[1])
-            entries = str(data[2])
-        elif starts(data, '[journeys]'): 
-            entries = str(data[1])
-        elif starts(data, '[last]'): 
-            order = 'DESC'
-            entries = str(data[1])
-
-        # "Normal" query 
-        if not starts(data, '[last]'):
-            query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure " \
-                    "FROM `city_journeys` j " \
-                    "INNER JOIN `city_translations` t " \
-                    "ON t.stationID = j.departure_station AND t.languageID=1 " \
-                    "INNER JOIN `city_translations` tr " \
-                    "ON tr.stationID = j.return_station AND tr.languageID=1 " \
-                    "WHERE j.id > %s ORDER BY j.id {} LIMIT {};".format(order, entries)
+        # Client wants journey data 
+        if x['type'] == 'journeys':
             
-            results = db.exec_query(query, [page_id])
+            sort = x['sort']
+            entries = x['limit']
+            previous = x['prev']
+            search = x['search']
+            last_page = x['last']
+            scrolled = x['scrolled']
+            has_meters = x['distance']['metersFilter']
+            has_seconds = x['duration']['secondsFilter']
+            total_meters = x['distance']['amount']
+            total_seconds = x['duration']['amount']
+            duration_over = x['duration']['over']
+            distance_over = x['distance']['over']
 
-        # Client wants to see last page
-        # This gets complicated since we need to subquery last N rows, and then sort them upside-down
-        # We could sort them with python but I've decided to just create a longer query with double join since the query performance is good
-        else: 
-            query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure " \
-                    "FROM ( " \
-                        "SELECT j.* FROM `city_journeys` j " \
+            # Scroll logic
+            scrolled += 1
+            show_entries = entries
+            entries = (entries * scrolled)
+            if(entries == 0): entries = show_entries
+
+            # Distance
+            if has_meters:
+                if x['distance']['unit'] == 'kilometers ':
+                    total_meters = int(total_meters) * 1000
+
+            # Duration
+            if has_seconds:
+                if x['duration']['unit'] == 'minutes ':
+                    total_seconds = int(total_seconds) * 60
+                elif x['duration']['unit'] == 'hours ':
+                    total_seconds = (int(total_seconds) * 60) * 60
+
+            # Res order
+            order = 'ASC'
+
+            # Distance
+            measure = '>'
+            query_dist = ''
+            if distance_over: measure = '<'
+            if has_meters: query_dist = ' WHERE j.distance {} {} '.format(measure, total_meters)
+            
+            # Duration
+            measure = '>'
+            query_dur = ''
+            if duration_over: measure = '<'
+            if has_seconds: 
+                if has_meters: query_dur = ' AND j.duration {} {} '.format(measure, total_seconds)
+                else: query_dur = ' WHERE j.duration {} {} '.format(measure, total_seconds)
+
+            # Search
+            query_params = []
+            search_query = ''
+
+            if search:
+                query_params = [f"{search}%", f"{search}%", f"%{search}", f"%{search}"]
+                if not has_seconds and not has_meters:
+                    search_query = " WHERE (t.name LIKE %s OR tr.name LIKE %s OR t.name LIKE %s OR tr.name LIKE %s) "
+                else: search_query = " AND (t.name LIKE %s OR tr.name LIKE %s OR t.name LIKE %s OR tr.name LIKE %s)  "
+
+            # Send count to client since they need it 
+            count_format = query_dist.replace('j.', '')
+            count_format_2 = query_dur.replace('j.', '')
+
+            if not search:
+                query = "SELECT COUNT(*) AS num FROM `city_journeys` " \
+                        "WHERE `id` > {}{}{}{} ;".format(
+                            0, 
+                            count_format.replace('WHERE', 'AND'), 
+                            count_format_2.replace('WHERE', 'AND'),
+                            search_query.replace('WHERE', 'AND')
+                        )
+                    
+                print('count query:', query)
+                results = db.exec_query(query, query_params)
+
+            else:
+                query = "SELECT COUNT(*) AS num FROM `city_journeys` j " \
                         "INNER JOIN `city_translations` t " \
                         "ON t.stationID = j.departure_station AND t.languageID=1 " \
                         "INNER JOIN `city_translations` tr " \
                         "ON tr.stationID = j.return_station AND tr.languageID=1 " \
-                        "ORDER BY j.id DESC LIMIT {}".format(entries) + \
-                    ") j " \
-                    "INNER JOIN `city_translations` t " \
-                    "ON t.stationID = j.departure_station AND t.languageID=1 " \
-                    "INNER JOIN `city_translations` tr " \
-                    "ON tr.stationID = j.return_station AND tr.languageID=1 " \
-                    "ORDER BY j.id ASC LIMIT {};".format(entries)
+                        "WHERE `id` > {}{}{}{} ;".format(
+                            0, 
+                            count_format.replace('WHERE', 'AND'), 
+                            count_format_2.replace('WHERE', 'AND'),
+                            search_query.replace('WHERE', 'AND')
+                        )
+
+            print('count query:', query)
+            results = db.exec_query(query, query_params)
             
-            results = db.exec_query(query, [])
+            # Inform client how many rows were returned
+            if results:
+                r = {"rows": results[0][0]}
+                jr = json.dumps(r)
+                socketio.emit('message', jr, to=request.sid)
 
+            # Sorting
+            column_sort = 'j.id'
+            if sort == 2: column_sort = 't.stationID'
+            if sort == 3: column_sort = 'tr.stationID'
+            if sort == 4: column_sort = 'j.distance'
+            if sort == 5: column_sort = 'j.duration'
 
-        if not results:
-            print(' [#] No results.')
+            if not last_page:
 
-            r = {"null": '404'}
-            json_response = json.dumps(r)
-            socketio.emit('message', json_response, to=request.sid)
-            return
+                query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure " \
+                        "FROM `city_journeys` j " \
+                        "INNER JOIN `city_translations` t " \
+                        "ON t.stationID = j.departure_station AND t.languageID=1 " \
+                        "INNER JOIN `city_translations` tr " \
+                        "ON tr.stationID = j.return_station AND tr.languageID=1 " \
+                        "{}{}{}ORDER BY {} {} LIMIT {};".format(
+                            query_dist, 
+                            query_dur, 
+                            search_query,
+                            column_sort, 
+                            order, entries)
+            else: 
+                
+                # Client wants to see the last page which becomes a bit funky 
+                query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure " \
+                        "FROM ( " \
+                            "SELECT j.* FROM `city_journeys` j " \
+                            "INNER JOIN `city_translations` t " \
+                            "ON t.stationID = j.departure_station AND t.languageID=1 " \
+                            "INNER JOIN `city_translations` tr " \
+                            "ON tr.stationID = j.return_station AND tr.languageID=1 " \
+                            "{}{}{}ORDER BY {} DESC LIMIT {}".format(
+                            query_dist, 
+                            query_dur, 
+                            search_query,
+                            column_sort, 
+                            entries) + \
+                        ") j " \
+                        "INNER JOIN `city_translations` t " \
+                        "ON t.stationID = j.departure_station AND t.languageID=1 " \
+                        "INNER JOIN `city_translations` tr " \
+                        "ON tr.stationID = j.return_station AND tr.languageID=1 " \
+                        "ORDER BY {} ASC LIMIT {};".format(column_sort, entries)
+            
+            # Fetch
+            results = db.exec_query(query, query_params)
 
-        i = 0
-        x = {"journeys":{}}
+            # Notify if nothing was found
+            if not results:
+                r = {"null": '404'}
+                jr = json.dumps(r)
+                socketio.emit('message', jr, to=request.sid)
+                return
 
-        # Loop all results
-        for row in results:
-            i += 1
-            idx = row[0]
+            i = 0
+            total = 0
+            first_id = -1
+            x = {"journeys":{}}
 
-            # Append data into json array
-            x["journeys"][idx] = {
-                "dstation": row[1],
-                "rstation": row[2],
-                "distance": row[3],
-                "duration": row[4],
-                "departure": str(row[5])
-            }
+            # Loop all results
+            for row in results:
 
-            # Echo data chunk to client
-            if i == 100:
+                total += 1
+                view_total = (entries - show_entries)
+
+                # Logic for pagescrolling
+                if not last_page:
+                    if not ( total > view_total ): continue
+                else: 
+                    if ( total > view_total and view_total > 0 or total > show_entries ): continue
+
+                i += 1
+                idx = row[0]
+
+                # Send client first rowID since they need it on some pagination functions
+                if first_id == -1 and not previous: 
+                    first_id = idx
+                    r = {"first": first_id}
+                    jr = json.dumps(r)
+                    socketio.emit('message', jr, to=request.sid)
+                else: 
+                    first_id = idx
+
+                # Append data into json array
+                x["journeys"][total] = {
+                    "dstation": row[1],
+                    "rstation": row[2],
+                    "distance": row[3],
+                    "duration": row[4],
+                    "departure": str(row[5]),
+                    "id": idx
+                }
+
+                # Echo data chunk to client
+                if i == 100:
+                    journey_data = json.dumps(x)
+                    socketio.emit('message', journey_data, to=request.sid)
+
+                    i = 0
+                    x = {"journeys":{}}
+            
+            # Send the rest, if there's something left
+            if i:
                 journey_data = json.dumps(x)
                 socketio.emit('message', journey_data, to=request.sid)
 
-                i = 0
-                x = {"journeys":{}}
-        
-        if i:
-            journey_data = json.dumps(x)
-            socketio.emit('message', journey_data, to=request.sid)
+            # Client is going to a previous page, they need some data
+            if previous:
+                r = {"first": first_id}
+                jr = json.dumps(r)
+                socketio.emit('message', jr, to=request.sid)
 
-        print(' [#] Finished query for', request.sid)
-
-    # We received json data
-    if starts(data, '{'):
-        print('got: ', data)
+            # Notify that the request is handled
+            r = {"done": {}}
+            jr = json.dumps(r)
+            socketio.emit('message', jr, to=request.sid)
+            print(' [#] Finished query for', request.sid)
 
 
 

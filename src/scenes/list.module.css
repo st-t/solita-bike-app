@@ -133,6 +133,15 @@
     opacity: 0.5;
 }
 
+.sort_icon_active {
+    color: #71f56c;
+    position: absolute;
+    margin-left: 10px;
+    padding-top: 3px;
+    padding: 2px;
+    opacity: 0.5;
+}
+
 .entry {
     transition: 1.3s;
 }

@@ -17,10 +17,14 @@ export default class index extends Component
         this.state = 
         {
             data:{},
+            
+            // List type
+            list_type: 'journey',
 
             // If client wants to sort by a column
-            sort_columns: [false, false, false, false, false, false],
-            
+            sortColumn: 1,
+            sort_columns: [true, false, false, false, false, false],
+
             // List column titles
             columns: ['#', 'Departure Station', 'Return Station', 'Distance', 'Duration', 'Departure'],
             
@@ -34,28 +38,40 @@ export default class index extends Component
             lastFetchID: 0,
             
             // Data for each pages
-            currentPage: 1, pageEntries: 20, expandJourney: 0,
-            displayFilters: false, expandFilters: true, calledLast: false, scrolledPage: 0,
+            currentPage: 1, pageEntries: 20, expandJourney: 0, totalRows: 0, firstRow: 0,
+            displayFilters: false, expandFilters: false, calledLast: false, scrolledPage: 0,
+            wentToLast: false, actualScrolled: 0,
             
             // Dropdowns stuff
-            dropdownSecClosed: true, dropdownMeterClosed: true, dropdownPagesClosed: true, dropdownResultsClosed: true,
-            timeUnit: 'seconds', meterUnit: 'meters', resultsForPage: '20', metersChecked: false, secondsChecked: false,
+            dropdownSecClosed: true, dropdownMeterClosed: true, 
+            dropdownPagesClosed: true, dropdownResultsClosed: true, 
+            metersChecked: false, secondsChecked: false,
+            timeUnit: 'seconds', meterUnit: 'meters', resultsForPage: '20',
 
-            // Filters apply
-            needApply: false, lastApplied: [], curApplied: [], 
-            filterMeters: 0, filterSeconds: 0, overSeconds: true, overMeters: true,
-            resultsPerPage: 20, pagesToLoad: '5'
+            // Filters 
+            filters: {},
+            needApply: false, displayNoResults: false,
+            overSeconds: true, overMeters: true,
+            goToLast: false, goingToLast: false,
+            lastApplied: [], curApplied: [], 
+            filterMeters: 0, filterSeconds: 0,
+            pagesToLoad: '5', search: ''
         };
         
         this.changeProps = this.changeProps.bind(this);
+        this.sortCallback = this.sortCallback.bind(this);
+        this.applyFilters = this.applyFilters.bind(this);
         this.changeLoading = this.changeLoading.bind(this);
+        this.searchCallback = this.searchCallback.bind(this);
         this.createDropdown = this.createDropdown.bind(this);
+        this.constructRequest = this.constructRequest.bind(this);
     }
 
     changeProps = (data) => {
         this.setState(data);
     }
 
+    // Sets loading screen
     changeLoading = (loadingState) => {
         this.props.changeProps({isLoaded: loadingState});
     } 
@@ -66,10 +82,12 @@ export default class index extends Component
         // Display loading message
         this.props.changeProps({isLoaded: false});
 
-        this.setState({lastFetchID: 0});
-        this.setState({scrolledPage: 0});
-        this.setState({calledLast: false});
-        this.setState({fetchEntriesAmount: 100});
+        this.setState({
+            lastFetchID: 0,
+            scrolledPage: 0,
+            calledLast: false, 
+            fetchEntriesAmount: 100
+        });
 
         let arr = [
             this.state.timeUnit, this.state.meterUnit, 
@@ -81,10 +99,8 @@ export default class index extends Component
 
         this.setState({lastApplied: arr});
 
-        // Fetch journeys from database
-        // Called everytime client lands on index page but that's fine
-        // Queries are very fast since we're showing only 100 at a time and table structure is optimized
-        socket.send('[journeys] ' + this.state.fetchEntriesAmount);
+        // Start by fetching journeys from database
+        this.formatJsonRequest();
 
         // Listen the server for messages
         socket.on('message', async (msg) => 
@@ -101,7 +117,7 @@ export default class index extends Component
                 // Parse the json string 
                 const obj = JSON.parse(json_response);
 
-                // We have some data 
+                // Connection notify
                 if(obj.hasOwnProperty('connection'))
                 {
                     console.log('>> socket response: ' + String(obj.connection) ); 
@@ -116,41 +132,75 @@ export default class index extends Component
                     // Handle json data
                     await this.handleServerMessage(obj);
                     
-                    // Pull some state data to east the code
                     const { 
-                        calledLast, 
-                        scrolledPage, 
-                        pageEntries,
-                        fetchEntriesAmount,
-                        lastFetchID
-            
+                        calledLast, scrolledPage, 
+                        pageEntries, fetchEntriesAmount,
+                        totalRows, pagesToLoad
                     } = this.state;
                     
                     // Some logic for displaying correct page numbers 
                     if(scrolledPage < 1)
                         this.setState({currentPage: 1});
                     else
-                        this.setState({currentPage: 1 + (pageEntries * scrolledPage)});
+                        this.setState({ currentPage: 1 + (pageEntries * scrolledPage) });
 
                     if(calledLast)
                     {
-                        var numPages = (fetchEntriesAmount / pageEntries);
-                        this.setState({ scrolledPage: Math.floor( (lastFetchID / (pageEntries * numPages) ) ) });
-                        this.setState({currentPage: numPages});
+                        let pageFix = (totalRows / pageEntries);
+                        let numPages = (fetchEntriesAmount / pageEntries);
+                        this.setState({ scrolledPage: Math.floor( (totalRows / (pageEntries * numPages) ) ) });
+
+                        if( !(pageFix && pageFix < pagesToLoad) )
+                            this.setState({currentPage: numPages});
                     }
                     else 
                         this.setState({currentPage: 1});
-                    
-                    this.props.changeProps({isLoaded: true});
-                    this.setState({displayFilters: true});
                 }
 
                 // There was no results
-                // Return to last page 
-                if(obj.hasOwnProperty('null'))
+                if( obj.hasOwnProperty('null') )
                 {
-                    this.setState({calledLast: true});
-                    socket.send('[last] ' + this.state.fetchEntriesAmount);
+                    if(this.state.goingToLast) 
+                        this.setState( {goToLast: true, goingToLast: false}, this.applyFilters );
+                    else 
+                    {
+                        this.setState( {
+                            search: '',
+                            metersChecked: false, 
+                            secondsChecked: false, 
+                            displayNoResults: true
+                        }, this.applyFilters );
+                    } 
+                }
+
+                // Server returned amount of rows
+                // We need this to calculate if client wants to see last page
+                if( obj.hasOwnProperty('rows') )
+                {
+                    this.setState({totalRows: obj.rows});
+
+                    const { pageEntries, fetchEntriesAmount } = this.state;
+                    
+                    let numReceived = (obj.rows / pageEntries);
+                    let numPages = (fetchEntriesAmount / pageEntries);
+
+                    // Check if there are more pages 
+                    if(numReceived < numPages)
+                        this.setState({calledLast: true});
+                }
+
+                // Server returned first id result
+                // We're using this on pagination
+                if( obj.hasOwnProperty('first') )
+                {
+                    this.setState({firstRow: obj.first});
+                }
+                
+                // Server response finished 
+                if(obj.hasOwnProperty('done'))
+                {
+                    this.setState({displayFilters: true});
+                    this.props.changeProps({isLoaded: true});
                 }
             }
         });
@@ -166,13 +216,9 @@ export default class index extends Component
         {
             if( obj.journeys.hasOwnProperty(key) ) 
             {
-                lastID = id;
-                var id = key;
-                column_data[0].push(id);
-
                 for( var attr in obj.journeys[key] ) 
                 {
-                    //console.log(id + " " + attr + " -> " + obj.journeys[key][attr]);
+                    // console.log(id + " " + attr + " -> " + obj.journeys[key][attr]);
 
                     switch(attr)
                     {
@@ -201,23 +247,27 @@ export default class index extends Component
                             column_data[5].push( obj.journeys[key][attr] );
                             break;
                         }
+                        case "id":
+                        {
+                            lastID = obj.journeys[key][attr];
+                            column_data[0].push( obj.journeys[key][attr] );
+                            break;
+                        }
                         default: break;
                     }
                 }
             }
         }
-
-        if(lastID++) this.setState({lastFetchID: lastID});
+        if(lastID) this.setState({lastFetchID: lastID});
     }
 
     // Client wants to see settings 
     handleFiltersExpansion()
     {
         this.setState({expandFilters: !this.state.expandFilters});
-        console.log('clicked filter expand'); 
     }
 
-    // Generates a dropdown for filters
+    // Generates a dropdown(s) for filters
     createDropdown = (type) => 
     {
         let all = [];
@@ -272,15 +322,14 @@ export default class index extends Component
             {
                 this.setState( {resultsForPage: val}, this.handleApply );
                 this.setState({dropdownResultsClosed: false}); 
-                this.setState({fetchEntriesAmount: (val * this.state.pagesToLoad)});
+                this.setState({ fetchEntriesAmount: (val * this.state.pagesToLoad) });
                 break;
             }
-                
             default: break;
         }
     }
 
-    // Handle if we need to apply filters 
+    // Check if we need to apply filters 
     handleApply()
     {
         const { 
@@ -306,9 +355,8 @@ export default class index extends Component
     // Callback function
     applyCallback()
     {
-        const { curApplied, lastApplied } = this.state;
-
         let needToApply = false;
+        const { curApplied, lastApplied } = this.state;
 
         for(let i = 0; i < curApplied.length; i++) 
         {
@@ -319,31 +367,120 @@ export default class index extends Component
                 break;
             }
         }
-
-        this.setState({needApply: needToApply});
+        this.setState({needApply: needToApply, displayNoResults: false});
     }
 
     // Client wants to apply filters 
-    applyFilters()
+    // Also called on occasions to refresh the results
+    applyFilters(last=false)
     {
-        this.setState({needApply: false});
-        this.setState({lastApplied: this.state.curApplied});
+        const { pagesToLoad, resultsForPage, curApplied } = this.state;
         
+        this.setState({
+            pageEntries: resultsForPage,
+            fetchEntriesAmount: (pagesToLoad * resultsForPage),
+            needApply: false,
+            lastApplied: curApplied
+        });
+
+        // First reset our page
+        const { column_data } = this.state;
+        
+        const arraylist = [];
+        for (let i = 0; i < column_data.length; i++) arraylist.push( [] );
+        
+        // Set loading screen and callback request
+        this.changeLoading(false);
+        
+        this.setState
+        ({
+            currentPage: 1,
+            actualScrolled: 0,
+            scrolledPage: 0,
+            lastFetchID: 0,
+            displayFilters: false,
+            calledLast: last,
+            column_data: arraylist,
+            wentToLast: false
+        }, this.formatJsonRequest );
+    }
+
+    // Callback for sorting columns
+    sortCallback(sort)
+    {
+        this.setState({ 
+            sortColumn: sort,
+            scrolledPage: 0,
+            actualScrolled: 0
+        }, this.applyFilters);
+    }
+
+    // Callback for search input
+    searchCallback(search)
+    {
+        this.setState({ 
+            search: search
+        }, this.applyFilters);
+    }
+
+    // Callback for creating a request
+    formatJsonRequest()
+    {
         const { 
             filterMeters, filterSeconds,
-            pagesToLoad, resultsForPage,
             meterUnit, timeUnit,
             overSeconds, overMeters,
             metersChecked, secondsChecked,
-            fetchEntriesAmount
-        } = this.state;
-        
-        this.setState({resultsPerPage: resultsForPage});
-        this.setState({fetchEntriesAmount: (pagesToLoad * resultsForPage)});
+            fetchEntriesAmount, lastFetchID, 
+            goToLast, sortColumn, 
+            actualScrolled, search
 
-        const obj = {limit: fetchEntriesAmount, stuff: 30};
-        const jsonRequest = JSON.stringify(obj); 
+        } = this.state;
+
+        // Filter data for backend query request
+        const obj = 
+        {
+            type: 'journeys',
+            last: goToLast,
+            prev: false,
+            distance: 
+            {
+                metersFilter: metersChecked, 
+                over: overMeters,
+                unit: meterUnit,
+                amount: filterMeters
+            },
+            duration: 
+            {
+                secondsFilter: secondsChecked,
+                over: overSeconds,
+                unit: timeUnit,
+                amount: filterSeconds
+            },
+            limit: fetchEntriesAmount,
+            scrolled: actualScrolled,
+            lastID: lastFetchID,
+            sort: sortColumn,
+            search: search
+        };
+        this.setState( {filters: obj}, this.serverRequest );
+    }
+
+    // Constructs a request for server
+    constructRequest(obj)
+    {
+        this.setState( {filters: obj}, this.serverRequest );
+    }
+
+    // Sends a request to server
+    serverRequest()
+    {
+        // Change the json to a string and send the request
+        const jsonRequest = JSON.stringify(this.state.filters); 
         socket.send(jsonRequest);
+
+        // Close cogwheel
+        this.setState({goToLast: false, expandFilters: false});
     }
 
     // Handles filter clicks
@@ -357,6 +494,7 @@ export default class index extends Component
         this.setState( {overSeconds: !this.state.overSeconds}, this.handleApply );
     }
 
+    // Client is writing a filter 
     handleFilterInput(e)
     {
         let input, attr;
@@ -393,22 +531,16 @@ export default class index extends Component
     };
 
     // Render the page 
-    // <table className={`${styles.container} ${styles.container}`}>
     render() 
     {
-        const { displayFilters, 
-                expandFilters, 
-                dropdownSecClosed, 
-                timeUnit, 
-                pagesToLoad, 
-                needApply,
-                filterMeters,
-                filterSeconds,
-                dropdownMeterClosed,
-                meterUnit,
-                dropdownPagesClosed,
-                dropdownResultsClosed,
-                resultsForPage
+        const { displayFilters, expandFilters, 
+                dropdownSecClosed, timeUnit, 
+                pagesToLoad, needApply,
+                filterMeters,filterSeconds,
+                dropdownMeterClosed, meterUnit,
+                dropdownPagesClosed, dropdownResultsClosed,
+                resultsForPage, displayNoResults
+
             } = this.state;
 
         return (
@@ -455,7 +587,7 @@ export default class index extends Component
                                             <li>
                                                 <div className={styles.f_searchWrap}>
                                                     <div className={styles.f_search}>
-                                                        <input type="text" data-name="meters" onChange ={this.handleFilterInput.bind(this)} className={styles.f_searchTerm} value={filterMeters} />
+                                                        <input type="text" data-name="meters" onChange={this.handleFilterInput.bind(this)} className={styles.f_searchTerm} value={filterMeters} />
                                                     </div>
                                                 </div>
                                             </li>
@@ -573,8 +705,20 @@ export default class index extends Component
                         </div>
                     </div>
                     
+                    {/* Search has failed */}
+                    <div className={`${displayNoResults === true ? styles.no_results : styles.hide_res} `}>
+                        No results. Check your search filters.
+                    </div>
+                    
                     {/* Render journeys */}
-                    <NewList data = {this.state} changeProps = {this.changeProps} changeLoading = {this.changeLoading}  />
+                    <NewList data = {this.state} 
+                    changeProps = {this.changeProps} 
+                    applyFilters = {this.applyFilters}
+                    sortCallback = {this.sortCallback}
+                    changeLoading = {this.changeLoading}  
+                    constructRequest = {this.constructRequest}
+                    searchCallback = {this.searchCallback}
+                    />
                     
                 </div>
             </div>

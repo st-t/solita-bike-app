@@ -5,13 +5,10 @@
     transition: .3s ease;
     padding-bottom: 20px;
     flex-grow: 0;
-    font-size: 40px;
-    font-weight: 600;
-    font-stretch: normal;
+    font-size: 22px;
     font-style: normal;
+    font-family: 'Rajdhani';
     line-height: normal;
-    text-align: center;
     color: #fff;
-    text-align: center;
-    padding-right: 200px;
+    width: 100%;
 }
