@@ -1,6 +1,8 @@
 
 
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
+import GoogleMaps from './maps';
 import socket from '../addons/socket';
 import styles from './list.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -12,7 +14,9 @@ import { faSearch,
         faCaretLeft, 
         faCaretRight } from '@fortawesome/free-solid-svg-icons'; 
 
+
 var columnNum = 0;
+var expandedColumns = [];
 
 
 export default class NewList extends Component {
@@ -21,11 +25,24 @@ export default class NewList extends Component {
     {
         super(props);
 
+        this.state = 
+        {
+            data:{},
+            test: '200 OK',
+            pressed: 0,
+            canLoad: false
+        }
+
         // Handle pagination clicks
         this.handlePage = this.handlePage.bind(this);
 
         // Handle column entry clicks
         this.handleColumnExpansion = this.handleColumnExpansion.bind(this);
+        this.changeProps = this.changeProps.bind(this);
+    }
+
+    changeProps = (data) => {
+        this.setState(data);
     }
 
     // Initialization(s) that requires DOM nodes should go here
@@ -98,6 +115,8 @@ export default class NewList extends Component {
     // Handle column clicks
     handleColumnExpansion = (num) => 
     { 
+        this.setState({canLoad: true});
+
         // Client clicked an expanded column => close it 
         if(num === this.props.data.expandJourney)
         {
@@ -105,7 +124,12 @@ export default class NewList extends Component {
             return; 
         }
 
+        const index = expandedColumns.indexOf(num);
+        if(index > -1) expandedColumns.splice(index, 1); 
+        expandedColumns.push(num);
+
         // Otherwise open the clicked column
+        this.setState({pressed: num});
         this.props.changeProps({expandJourney: num});
     }
 
@@ -116,7 +140,8 @@ export default class NewList extends Component {
             column_data, 
             currentPage, 
             pageEntries, 
-            expandJourney 
+            expandJourney,
+            linkStations
 
         } = this.props.data;
 
@@ -132,7 +157,9 @@ export default class NewList extends Component {
             return (
                 <ul key={idx + index}
                     id = {column_data[0][idx + index]} 
-                    onClick = { () => this.handleColumnExpansion(column_data[0][idx + index], (idx + index))}>
+                    onClick = { () => this.handleColumnExpansion(column_data[0][idx + index], (idx + index)) + 
+                    expandedColumns.push((idx + index))}
+                    >
                     
                     {/* When user clicks an entry => expand it */}
                     <li className={`${expandJourney === column_data[0][idx + index] ? styles.entry_ex : styles.entry} `} >
@@ -142,12 +169,22 @@ export default class NewList extends Component {
 
                         {/* Expanded content */}
                         <div className = {`${expandJourney === column_data[0][idx + index] ? styles.entry_visible : styles.entry_hidden} `} >
-                            <div className = {`${expandJourney === column_data[0][idx + index] ? styles.entry_content_l : styles.entry_hidden} `}>
-                                content_left
+
+                            <div className = {`${expandJourney === column_data[0][idx + index] && linkStations == true ? styles.entry_content_l_j : styles.entry_hidden} `}>
+                                {
+                                    expandedColumns.indexOf(idx + index) === -1 ?
+                                    <div>error</div> :
+                                    <GoogleMaps data = {this.state} expanded={expandJourney} coordinates={column_data} coord_index={(idx+index)}/>
+                                }
                             </div>
 
-                            <div className={`${expandJourney === column_data[0][idx + index] ? styles.entry_content_r : styles.entry_hidden} `}>
-                                content_right
+                            <div className = {`${expandJourney === column_data[0][idx + index] && linkStations == false ? styles.entry_content_l : styles.entry_hidden} `}>
+                                
+                                    <div>stations content</div> 
+                            </div>
+
+                            <div className={`${expandJourney === column_data[0][idx + index] && linkStations == false ? styles.entry_content_r : styles.entry_hidden} `}>
+                                stations content_right
                             </div>
                         </div>
                     </li>
@@ -165,7 +202,7 @@ export default class NewList extends Component {
     renderEntry(index, mappedEntry)
     {
         const titles = [], headers = [];
-        const { column_data, columns } = this.props.data;
+        const { column_data, columns, linkStations } = this.props.data;
         
         // Column data itself
         for (let i = 1; i < columns.length; i++)
@@ -180,10 +217,23 @@ export default class NewList extends Component {
         {
             // React starts yelling about missing key without this
             if(mappedEntry) columnNum ++;
+
+            // <Link to="/stations"> </Link>
+            // console.log('string: %s index: %i', string, hIndex);
+            
+            var renderLink = false;
+            
+            // If we are in journeys list, create a link for return and departure stations
+            if(linkStations)
+                if(hIndex == 0 || hIndex == 1) renderLink = true;
             
             return (
-                <li className={styles.entry} key={columnNum}>{string}
-                    <p>{headers[hIndex]}</p>
+                <li className={styles.entry} key={columnNum}>
+                    {
+                        renderLink === true 
+                        ? <Link className={styles.station_link} to="/stations">{string}<p>{headers[hIndex]}</p></Link> 
+                        : <a>{string}<p>{headers[hIndex]}</p></a>
+                    }
                 </li>
             );
         });

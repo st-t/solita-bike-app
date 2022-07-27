@@ -19,7 +19,7 @@ export default class index extends Component
             data:{},
             
             // List type
-            list_type: 'journey',
+            list_type : 'journey',
 
             // If client wants to sort by a column
             sortColumn: 1,
@@ -29,7 +29,7 @@ export default class index extends Component
             columns: ['#', 'Departure Station', 'Return Station', 'Distance', 'Duration', 'Departure'],
             
             // List column data
-            column_data: [ [], [], [], [], [], [] ],
+            column_data: [ [], [], [], [], [], [], [], [], [], [] ],
 
             // How much entries to fetch
             fetchEntriesAmount: 100,
@@ -40,7 +40,7 @@ export default class index extends Component
             // Data for each pages
             currentPage: 1, pageEntries: 20, expandJourney: 0, totalRows: 0, firstRow: 0,
             displayFilters: false, expandFilters: false, calledLast: false, scrolledPage: 0,
-            wentToLast: false, actualScrolled: 0,
+            wentToLast: false, actualScrolled: 0, linkStations: true,
             
             // Dropdowns stuff
             dropdownSecClosed: true, dropdownMeterClosed: true, 
@@ -86,6 +86,7 @@ export default class index extends Component
             lastFetchID: 0,
             scrolledPage: 0,
             calledLast: false, 
+            displayFilters: false,
             fetchEntriesAmount: 100
         });
 
@@ -222,37 +223,24 @@ export default class index extends Component
 
                     switch(attr)
                     {
-                        case "dstation": 
-                        {
-                            column_data[1].push( obj.journeys[key][attr] );
-                            break;
-                        }
-                        case "rstation": 
-                        {
-                            column_data[2].push( obj.journeys[key][attr] );
-                            break;
-                        }
-                        case "distance": 
-                        {
-                            column_data[3].push( obj.journeys[key][attr] );
-                            break;
-                        }
-                        case "duration":
-                        {
-                            column_data[4].push( obj.journeys[key][attr] );
-                            break;
-                        }
-                        case "departure":
-                        {
-                            column_data[5].push( obj.journeys[key][attr] );
-                            break;
-                        }
+                        case "dstation": column_data[1].push( obj.journeys[key][attr] ); break;
+                        case "rstation": column_data[2].push( obj.journeys[key][attr] ); break;
+                        case "distance": column_data[3].push( obj.journeys[key][attr] ); break;
+                        case "duration": column_data[4].push( obj.journeys[key][attr] ); break;
+                        case "departure": column_data[5].push( obj.journeys[key][attr] ); break;
+
                         case "id":
                         {
                             lastID = obj.journeys[key][attr];
                             column_data[0].push( obj.journeys[key][attr] );
                             break;
                         }
+
+                        // Long and latitude
+                        case "d_x": column_data[6].push( obj.journeys[key][attr] ); break;
+                        case "d_y": column_data[7].push( obj.journeys[key][attr] ); break;
+                        case "r_x": column_data[8].push( obj.journeys[key][attr] ); break;
+                        case "r_y": column_data[9].push( obj.journeys[key][attr] ); break;
                         default: break;
                     }
                 }
@@ -602,8 +590,10 @@ export default class index extends Component
                                                             </svg>
                                                         </div>
                                                     </button>
-                                                    <div className={styles.dropdown} data-open={dropdownMeterClosed ? false : true} data-type="2">
-                                                        {this.createDropdown(2)}
+                                                    <div className={styles.drop_abs_2}>
+                                                        <div className={styles.dropdown} data-open={dropdownMeterClosed ? false : true} data-type="2">
+                                                            {this.createDropdown(2)}
+                                                        </div>
                                                     </div>
                                                 </label>
                                             </li>
@@ -645,8 +635,10 @@ export default class index extends Component
                                                             </svg>
                                                         </div>
                                                     </button>
-                                                    <div className={styles.dropdown} data-open={dropdownSecClosed ? false : true} data-type="1">
-                                                        {this.createDropdown(1)}
+                                                    <div className={styles.drop_abs_1}>
+                                                        <div className={styles.dropdown} data-open={dropdownSecClosed ? false : true} data-type="1">
+                                                            {this.createDropdown(1)}
+                                                        </div>
                                                     </div>
                                                 </label>
                                             </li>
@@ -668,8 +660,10 @@ export default class index extends Component
                                                             </svg>
                                                         </div>
                                                     </button>
-                                                    <div className={styles.dropdown} data-open={dropdownResultsClosed ? false : true} data-type="4">
-                                                        {this.createDropdown(4)}
+                                                    <div className={styles.drop_abs_4}>
+                                                        <div className={styles.dropdown} data-open={dropdownResultsClosed ? false : true} data-type="4">
+                                                            {this.createDropdown(4)}
+                                                        </div>
                                                     </div>
                                                 </label>
                                             </li>
@@ -689,8 +683,10 @@ export default class index extends Component
                                                             </svg>
                                                         </div>
                                                     </button>
-                                                    <div className={styles.dropdown} data-open={dropdownPagesClosed ? false : true} data-type="3">
-                                                        {this.createDropdown(3)}
+                                                    <div className={styles.drop_abs_3}>
+                                                        <div className={styles.dropdown} data-open={dropdownPagesClosed ? false : true} data-type="3">
+                                                            {this.createDropdown(3)}
+                                                        </div>
                                                     </div>
                                                 </label>
                                             </li>

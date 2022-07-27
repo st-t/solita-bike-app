@@ -17,27 +17,47 @@ const Header = ({sqlStatus}) =>
     const {position: { client },} = useMightyMouse(true, 'trackElement');
 
     return (
-    <>
-        <h1 className={anims.logo_head} data-text="City-bike-app">City-bike-app</h1>
-        <small className={anims.sig}>Dev Academy pre-assignment ~ Samuli Taskila</small>
+        <>
+            <h1 className={anims.logo_head} data-text="City-bike-app">City-bike-app</h1>
+            <small className={anims.sig}>Dev Academy pre-assignment ~ Samuli Taskila</small>
 
-        <div className={anims.header_anim} id="trackElement">
-
-            {/*  Background graphics 
-            Man enough to say I ctrl+v'd this :-D */}
-            <div className={anims.background}>
-                <div className={anims.bubble} style={{transform: `translate(${client.x && client.x.toFixed(0) / 20}px, ${client.y && client.y.toFixed(0) / 20}px)`}}></div>
-                <div className={anims.bubble_1} style={{transform: `translate(${client.x && client.x.toFixed(0) / 30}px, ${client.y && client.y.toFixed(0) / 30}px)`}}></div>
-                    
-                <div className={anims.line} style={{height: `${client.x && client.x.toFixed(0) / 2}px`}}></div>
-                <div className={anims.line_1} style={{height: `${client.x && client.x.toFixed(0) / 3}px`}}></div>
-                <div className={anims.line_2} style={{height: `${client.x && client.x.toFixed(0) / 4}px`}}></div>
-                <div className={anims.line_3} style={{height: `${client.x && client.x.toFixed(0) / 5}px`}}></div>
+            <div className={anims.header_anim} id="trackElement">
+                <div className={anims.background}>
+                    <div className={anims.bubble} style={{transform: `translate(${client.x && client.x.toFixed(0) / 20}px, ${client.y && client.y.toFixed(0) / 20}px)`}}></div>
+                    <div className={anims.bubble_1} style={{transform: `translate(${client.x && client.x.toFixed(0) / 30}px, ${client.y && client.y.toFixed(0) / 30}px)`}}></div>
+                        
+                    <div className={anims.line} style={{height: `${client.x && client.x.toFixed(0) / 2}px`}}></div>
+                    <div className={anims.line_1} style={{height: `${client.x && client.x.toFixed(0) / 3}px`}}></div>
+                    <div className={anims.line_2} style={{height: `${client.x && client.x.toFixed(0) / 4}px`}}></div>
+                    <div className={anims.line_3} style={{height: `${client.x && client.x.toFixed(0) / 5}px`}}></div>
+                </div>
             </div>
-        </div>
 
-        <small className={styles.sql_status}>{sqlStatus}</small>
-    </>
+            <small className={styles.sql_status}>{sqlStatus}</small>
+        </>
+    );
+}
+
+
+const MobileNavLinks = () => 
+{
+    return (
+        <div className={styles.mobile_nav}>
+            <input type="checkbox" className={styles.openSidebarMenu} id="openSidebarMenu"/>
+
+            <label htmlFor="openSidebarMenu" className={styles.sidebarIconToggle}>
+                <div className={`${styles.spinner} ${styles.diagonal} ${styles.part_1}`}></div>
+                <div className={`${styles.spinner} ${styles.horizontal}`}></div>
+                <div className={`${styles.spinner} ${styles.diagonal} ${styles.part_2}`}></div>
+            </label>
+
+            <div id={styles.sidebarMenu} >
+                <ul className={styles.sidebarMenuInner}>
+                    <li>City-bike-app<span>Navigation Menu</span></li>
+                    <li><a href="https://vanila.io" target="_blank">Link</a></li>
+                </ul>
+            </div> 
+        </div>
     );
 }
 
@@ -102,7 +122,10 @@ export default class App extends Component
                                 <Link to="/stations" className={styles.navlink} >Stations</Link>
                                 <Link to="/settings" className={styles.navlink} >Settings</Link>
                             </li>
+
                         </div>
+
+                        <MobileNavLinks/>
                         
                         {/* Pages */}
                         <Routes>
@@ -130,7 +153,7 @@ export default class App extends Component
                                     changeProps = {this.changeProps}/>
                             }>
                             </Route>
-
+                            
                         </Routes>
                     </Fragment>
                 </Router>

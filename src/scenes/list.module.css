@@ -148,7 +148,7 @@
 
 /* When user clicks a list entry => expand it */
 .entry_ex {
-    margin-bottom: 270px;
+    margin-bottom: 380px;
     transition: 1.3s;
 }
 
@@ -157,32 +157,41 @@
     display: block;
     position: absolute;
     opacity: 1;
-    transition: 1.3s;
-
-    width: 680px;
-    height: 270px;
-
-    border-color: red;
-    border-style: dotted;
+    transition: 4.3s;
+    left: 70%;
+    width: 70vw;
+    height: 340px;
 }
 
 .entry_hidden {
     opacity: 0;
     position: absolute;
     margin-bottom: 0px;
-    transition: 0.4s;
+    transition: 0.0s;
 }
 
 .entry_content_l {
     position: absolute;
-    width: 300px;
-    height: 250px;
+    width: 330px;
+    height: 340px;
     padding: 10px;
+    padding-top: 20px;
     margin-bottom: 100px;
+    animation: fadeIn ease 3s;
+    -webkit-animation: fadeIn ease 3s;
+    -moz-animation: fadeIn ease 3s;
+    -o-animation: fadeIn ease 3s;
+    -ms-animation: fadeIn ease 3s;
+    transition: 2.4s;
+}
 
-    border-color: violet;
-    border-style: dotted;
-
+.entry_content_l_j {
+    position: relative;
+    width: 100%;
+    height: 340px;
+    padding: 10px;
+    padding-top: 20px;
+    margin-bottom: 100px;
     animation: fadeIn ease 3s;
     -webkit-animation: fadeIn ease 3s;
     -moz-animation: fadeIn ease 3s;
@@ -193,10 +202,12 @@
 
 .entry_content_r {
     float: right;
-    width: 300px;
-    height: 250px;
+    width: 330px;
+    height: 340px;
+    left: 20px;
     margin-bottom: 100px;
     padding: 10px;
+    padding-top: 20px;
 
     border-color: violet;
     border-style: dotted;
@@ -209,7 +220,35 @@
     transition: 2.4s;
 }
 
+.filters {
+    opacity: 1;
+    transition: 0.1s;
+}
 
+.filters_hide {
+    opacity: 0;
+    transition: 0.1s;
+}
+
+/* Journey return and departure stations link */
+.station_link
+{   
+    text-decoration: none;
+    color: white;
+}
+
+.station_link:hover
+{   
+    text-decoration: none;
+    color: rgb(83, 224, 90);
+}
+
+.none {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    height: 0;
+}
 
 .search {
     width: 100%;
@@ -274,16 +313,10 @@
 }
 
 @media screen and (min-width:1400px) {
-
     .list {
         width: 85%;
     }
-
-    .searchWrap {
-    }
 }
-
-
 
 @media screen and (max-width:1120px) {
     .list {
@@ -300,6 +333,10 @@
 
 /* Mobile */
 @media screen and (max-width:1014px) {
+    
+    .entry_visible {
+        padding-top: 2px;
+    }
 
     .list .list_header {
         display: none;
@@ -375,6 +412,40 @@
 
     .list ul li:first-child  {
         max-width: 80px;
+    }
+}
+
+@media screen and (max-width:930px) {
+    .entry_visible {
+        left: 15%;
+    }
+}
+
+@media screen and (max-width:740px) {
+    .entry_visible {
+        left: 150%;
+        width: 60vw;
+    }
+}
+
+@media screen and (max-width:660px) {
+    .entry_visible {
+        left: 40%;
+        width: 59vw;
+    }
+}
+
+@media screen and (max-width:540px) {
+    .entry_visible {
+        left: 10%;
+        width: 60vw;
+    }
+}
+
+@media screen and (max-width:420px) {
+    .entry_visible {
+        left: 00%;
+        width: 57vw;
     }
 }
 

@@ -46,6 +46,7 @@
 
 .filters_visible {
     margin-bottom: 10px;
+    padding-top: 25px;
     display: block;
     position: relative;
     opacity: 1;
@@ -53,7 +54,7 @@
 
     overflow-y: hidden;
     overflow-x: auto;
-
+    
     top: 0;
     width: 95%;
     height: 250px;
@@ -183,7 +184,7 @@
 .input_pr {
     height: 2.0rem;
     width: 100px;
-    top: 12px;
+    top: 2px;
     right: 0px;
     left: -10px;
     color: var(--text-color-0);
@@ -211,6 +212,32 @@
     display: none;
 }
 
+/* Duration */
+.drop_abs_1 {
+    position: absolute !important;
+    left: 450px;
+    top: 110px;
+}
+
+/* Distance */
+.drop_abs_2 {
+    position: absolute !important;
+    left: 450px;
+    top: 60px;
+}
+
+.drop_abs_3 {
+    position: absolute !important;
+    left: 210px;
+    top: 110px;
+}
+
+.drop_abs_4 {
+    position: absolute !important;
+    left: 210px;
+    top: -18px;
+}
+
 .dropdown {
     color: var(--text-color-0);
     background: rgba(19, 19, 19, 0.904);
@@ -223,7 +250,7 @@
 
     visibility: hidden;
     z-index: 0;
-    position: absolute;
+    position: sticky;
     width: 98px;
     top: 154px;
 }

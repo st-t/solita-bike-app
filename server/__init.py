@@ -66,7 +66,7 @@ def handle_message(data):
 
         # Client wants journey data 
         if x['type'] == 'journeys':
-            
+
             sort = x['sort']
             entries = x['limit']
             previous = x['prev']
@@ -172,12 +172,16 @@ def handle_message(data):
 
             if not last_page:
 
-                query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure " \
+                query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure, s.x, s.y, sr.x, sr.y " \
                         "FROM `city_journeys` j " \
                         "INNER JOIN `city_translations` t " \
                         "ON t.stationID = j.departure_station AND t.languageID=1 " \
                         "INNER JOIN `city_translations` tr " \
                         "ON tr.stationID = j.return_station AND tr.languageID=1 " \
+                        "INNER JOIN `city_stations` s " \
+                        "ON s.id = t.stationID " \
+                        "INNER JOIN `city_stations` sr " \
+                        "ON sr.id = tr.stationID " \
                         "{}{}{}ORDER BY {} {} LIMIT {};".format(
                             query_dist, 
                             query_dur, 
@@ -187,7 +191,7 @@ def handle_message(data):
             else: 
                 
                 # Client wants to see the last page which becomes a bit funky 
-                query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure " \
+                query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure, s.x, s.y, sr.x, sr.y " \
                         "FROM ( " \
                             "SELECT j.* FROM `city_journeys` j " \
                             "INNER JOIN `city_translations` t " \
@@ -205,9 +209,14 @@ def handle_message(data):
                         "ON t.stationID = j.departure_station AND t.languageID=1 " \
                         "INNER JOIN `city_translations` tr " \
                         "ON tr.stationID = j.return_station AND tr.languageID=1 " \
+                        "INNER JOIN `city_stations` s " \
+                        "ON s.id = t.stationID " \
+                        "INNER JOIN `city_stations` sr " \
+                        "ON sr.id = tr.stationID " \
                         "ORDER BY {} ASC LIMIT {};".format(column_sort, entries)
             
             # Fetch
+            print('\n{}\n'.format(query))
             results = db.exec_query(query, query_params)
 
             # Notify if nothing was found
@@ -253,7 +262,11 @@ def handle_message(data):
                     "distance": row[3],
                     "duration": row[4],
                     "departure": str(row[5]),
-                    "id": idx
+                    "id": idx,
+                    "d_x": row[6],
+                    "d_y": row[7],
+                    "r_x": row[8],
+                    "r_y": row[9]
                 }
 
                 # Echo data chunk to client

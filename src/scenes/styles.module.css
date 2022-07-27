@@ -21,6 +21,23 @@
     max-width: 130px;
 }
 
+.maps_outer {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    opacity: 0.7;
+    border-radius: 10px;
+}
+
+.maps {
+    width: 100%;
+    height: 350px;
+    position: absolute;
+    
+    box-shadow: 0 0 15px #9eedb2a1;
+    transition: 8.3s;
+}
+
 @media only screen and (max-width: 1300px) {
     .header_links {
         left: 45vw;
@@ -81,4 +98,149 @@
 .navitem {
     position: relative;
     transition: all 140ms linear;
+}
+
+/* Mobile nav */
+.mobile_nav {
+    display: none;
+    position: fixed;
+    z-index: 992229;
+}
+
+#sidebarMenu {
+    border-style: inset;
+    border-color: rgba(72, 165, 60, 0.322);
+    border-right: none;
+    border-radius: 5px;
+    height: 100%;
+    position: fixed;
+    right: -40px;
+    width: 280px;
+    margin-top: 20px;
+    transform: translateX(+280px);
+    transition: transform 250ms ease-in-out;
+    /*background: linear-gradient(180deg, #222222 0%, #000000ee 100%);*/
+    background-color:#181818 ;
+}
+
+.sidebarIconToggle {
+    transition: all 0.3s;
+    box-sizing: border-box;
+    cursor: pointer;
+    position: absolute;
+    z-index: 99;
+    height: 100%;
+    width: 100%;
+    top: 30px;
+    height: 22px;
+    width: 40px;
+    position: fixed;
+    right: 30px;
+}
+
+.sidebarMenuInner {
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebarMenuInner li:first-child {
+    cursor: default;
+    color: #0de03bf1;
+}
+
+.sidebarMenuInner li {
+    list-style: none;
+    color: #fff;
+    text-transform: uppercase;
+    font-weight: bold;
+    padding: 20px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebarMenuInner li a:hover {
+    color: rgb(83, 224, 90);
+}
+
+.sidebarMenuInner li span {
+    display: block;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.sidebarMenuInner li a {
+    color: #fff;
+    text-transform: uppercase;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+input[type="checkbox"]:checked ~ #sidebarMenu {
+    transform: translateX(0);
+}
+
+input[type="checkbox"] {
+    transition: all 0.3s;
+    box-sizing: border-box;
+    display: none;
+}
+
+.spinner {
+    transition: all 0.3s;
+    box-sizing: border-box;
+    position: absolute;
+    height: 5px;
+    width: 100%;
+    background-color: rgba(78, 226, 59, 0.699);
+}
+
+.horizontal {
+    transition: all 0.3s;
+    box-sizing: border-box;
+    position: relative;
+    float: left;
+    margin-top: 3px;
+}
+
+.diagonal.part_1 {
+    position: relative;
+    transition: all 0.3s;
+    box-sizing: border-box;
+    float: left;
+}
+
+.diagonal.part_2 {
+    transition: all 0.3s;
+    box-sizing: border-box;
+    position: relative;
+    float: left;
+    margin-top: 3px;
+}
+
+input[type="checkbox"]:checked ~ .sidebarIconToggle > .horizontal {
+    transition: all 0.3s;
+    box-sizing: border-box;
+    opacity: 0;
+}
+
+input[type="checkbox"]:checked ~ .sidebarIconToggle > .diagonal.part_1 {
+    transition: all 0.3s;
+    box-sizing: border-box;
+    transform: rotate(135deg);
+    margin-top: 8px;
+}
+
+input[type="checkbox"]:checked ~ .sidebarIconToggle > .diagonal.part_2 {
+    transition: all 0.3s;
+    box-sizing: border-box;
+    transform: rotate(-135deg);
+    margin-top: -9px;
+}
+
+@media only screen and (max-width: 1014px) {
+    .mobile_nav {
+        display: block;
+    }
 }
