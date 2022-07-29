@@ -23,6 +23,7 @@ export default class index extends Component
 
             // If client wants to sort by a column
             sortColumn: 1,
+            have_sort: [true, true, true, true, true, false],
             sort_columns: [true, false, false, false, false, false],
 
             // List column titles
@@ -38,9 +39,13 @@ export default class index extends Component
             lastFetchID: 0,
             
             // Data for each pages
-            currentPage: 1, pageEntries: 20, expandJourney: 0, totalRows: 0, firstRow: 0,
-            displayFilters: false, expandFilters: false, calledLast: false, scrolledPage: 0,
-            wentToLast: false, actualScrolled: 0, linkStations: true,
+            station_ids: [ [], [] ],
+            currentPage: 1, pageEntries: 20, 
+            expandJourney: 0, totalRows: 0, 
+            firstRow: 0, scrolledPage: 0, actualScrolled: 0,
+            displayFilters: false, expandFilters: false, 
+            calledLast: false, wentToLast: false, 
+            linkStations: true, stopScroll: false,
             
             // Dropdowns stuff
             dropdownSecClosed: true, dropdownMeterClosed: true, 
@@ -86,7 +91,6 @@ export default class index extends Component
             lastFetchID: 0,
             scrolledPage: 0,
             calledLast: false, 
-            displayFilters: false,
             fetchEntriesAmount: 100
         });
 
@@ -107,7 +111,6 @@ export default class index extends Component
         socket.on('message', async (msg) => 
         {
             this.setState({data:msg})
-            this.setState({displayFilters: false});
 
             // Message from socketio 
             let json_response = this.state.data; 
@@ -117,46 +120,6 @@ export default class index extends Component
             {
                 // Parse the json string 
                 const obj = JSON.parse(json_response);
-
-                // Connection notify
-                if(obj.hasOwnProperty('connection'))
-                {
-                    console.log('>> socket response: ' + String(obj.connection) ); 
-                }
-
-                // We recieved journey data
-                if( obj.hasOwnProperty('journeys') )
-                {
-                    // Display loading message
-                    this.props.changeProps({isLoaded: false});
-
-                    // Handle json data
-                    await this.handleServerMessage(obj);
-                    
-                    const { 
-                        calledLast, scrolledPage, 
-                        pageEntries, fetchEntriesAmount,
-                        totalRows, pagesToLoad
-                    } = this.state;
-                    
-                    // Some logic for displaying correct page numbers 
-                    if(scrolledPage < 1)
-                        this.setState({currentPage: 1});
-                    else
-                        this.setState({ currentPage: 1 + (pageEntries * scrolledPage) });
-
-                    if(calledLast)
-                    {
-                        let pageFix = (totalRows / pageEntries);
-                        let numPages = (fetchEntriesAmount / pageEntries);
-                        this.setState({ scrolledPage: Math.floor( (totalRows / (pageEntries * numPages) ) ) });
-
-                        if( !(pageFix && pageFix < pagesToLoad) )
-                            this.setState({currentPage: numPages});
-                    }
-                    else 
-                        this.setState({currentPage: 1});
-                }
 
                 // There was no results
                 if( obj.hasOwnProperty('null') )
@@ -173,80 +136,8 @@ export default class index extends Component
                         }, this.applyFilters );
                     } 
                 }
-
-                // Server returned amount of rows
-                // We need this to calculate if client wants to see last page
-                if( obj.hasOwnProperty('rows') )
-                {
-                    this.setState({totalRows: obj.rows});
-
-                    const { pageEntries, fetchEntriesAmount } = this.state;
-                    
-                    let numReceived = (obj.rows / pageEntries);
-                    let numPages = (fetchEntriesAmount / pageEntries);
-
-                    // Check if there are more pages 
-                    if(numReceived < numPages)
-                        this.setState({calledLast: true});
-                }
-
-                // Server returned first id result
-                // We're using this on pagination
-                if( obj.hasOwnProperty('first') )
-                {
-                    this.setState({firstRow: obj.first});
-                }
-                
-                // Server response finished 
-                if(obj.hasOwnProperty('done'))
-                {
-                    this.setState({displayFilters: true});
-                    this.props.changeProps({isLoaded: true});
-                }
             }
         });
-    }
-
-    // Handle server response
-    async handleServerMessage(obj) 
-    {
-        var lastID = 0;
-        const { column_data } = this.state;
-
-        for(var key in obj.journeys) 
-        {
-            if( obj.journeys.hasOwnProperty(key) ) 
-            {
-                for( var attr in obj.journeys[key] ) 
-                {
-                    // console.log(id + " " + attr + " -> " + obj.journeys[key][attr]);
-
-                    switch(attr)
-                    {
-                        case "dstation": column_data[1].push( obj.journeys[key][attr] ); break;
-                        case "rstation": column_data[2].push( obj.journeys[key][attr] ); break;
-                        case "distance": column_data[3].push( obj.journeys[key][attr] ); break;
-                        case "duration": column_data[4].push( obj.journeys[key][attr] ); break;
-                        case "departure": column_data[5].push( obj.journeys[key][attr] ); break;
-
-                        case "id":
-                        {
-                            lastID = obj.journeys[key][attr];
-                            column_data[0].push( obj.journeys[key][attr] );
-                            break;
-                        }
-
-                        // Long and latitude
-                        case "d_x": column_data[6].push( obj.journeys[key][attr] ); break;
-                        case "d_y": column_data[7].push( obj.journeys[key][attr] ); break;
-                        case "r_x": column_data[8].push( obj.journeys[key][attr] ); break;
-                        case "r_y": column_data[9].push( obj.journeys[key][attr] ); break;
-                        default: break;
-                    }
-                }
-            }
-        }
-        if(lastID) this.setState({lastFetchID: lastID});
     }
 
     // Client wants to see settings 
@@ -411,7 +302,7 @@ export default class index extends Component
         }, this.applyFilters);
     }
 
-    // Callback for creating a request
+    // Callback for creating a request, called also on initialization
     formatJsonRequest()
     {
         const { 
@@ -468,7 +359,7 @@ export default class index extends Component
         socket.send(jsonRequest);
 
         // Close cogwheel
-        this.setState({goToLast: false, expandFilters: false});
+        this.setState({goToLast: false, expandFilters: false, stopScroll: false});
     }
 
     // Handles filter clicks

@@ -4,7 +4,9 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Loader from './loader/index';
 import Index from './index/index';
 import Settings from './settings/index';
+import Station from './station/index';
 import Stations from './stations/index';
+import Create from './create/index';
 import socket from '../addons/socket';
 import anims from './anims.module.css';
 import styles from './styles.module.css';
@@ -81,6 +83,21 @@ export default class App extends Component
     // Initialization(s) that requires DOM nodes should go here
     componentDidMount() 
     {
+        socket.on('message', async (msg) => 
+        {
+            this.setState({data:msg})
+
+            // Message from socketio 
+            let json_response = this.state.data; 
+
+            if( String( typeof(json_response) ) === 'string' )
+            {
+                const obj = JSON.parse(json_response);
+                // Connection notify
+                if( obj.hasOwnProperty('connection') ) console.log('>> socket response: ' + String(obj.connection) ); 
+            }
+        });
+
         // Let the server know we're in
         socket.on('connect', function() 
         {
@@ -121,6 +138,7 @@ export default class App extends Component
                                 <Link to="/" className={styles.navlink} >Journeys</Link>
                                 <Link to="/stations" className={styles.navlink} >Stations</Link>
                                 <Link to="/settings" className={styles.navlink} >Settings</Link>
+                                <Link to="/create" className={styles.navlink} >Add New</Link>
                             </li>
 
                         </div>
@@ -130,29 +148,40 @@ export default class App extends Component
                         {/* Pages */}
                         <Routes>
 
-                            {/* Index */}
+                            {/* Journeys (index) */}
                             <Route exact path="/" element = {
                                 <Index 
                                     data = {this.state.data} 
                                     changeProps = {this.changeProps} />
-                            }>
-                            </Route>
+                            }/>
                             
                             {/* Data / Settings */}
                             <Route exact path="/settings" element = { 
                                 <Settings
                                     data = {this.state.data} 
                                     changeProps = {this.changeProps}/>
-                            }>
-                            </Route>
+                            }/>
                             
                             {/* Stations */}
                             <Route exact path="/stations" element = { 
                                 <Stations
                                     data = {this.state.data} 
                                     changeProps = {this.changeProps}/>
-                            }>
-                            </Route>
+                            }/>
+
+                            {/* Single station view */}
+                            <Route path="/station/:stationID" element={ 
+                                <Station
+                                    data = {this.state.data} 
+                                    changeProps = {this.changeProps}/>
+                            }/>
+
+                            {/* Add new entries */}
+                            <Route exact path="/create" element = { 
+                                <Create
+                                    data = {this.state.data} 
+                                    changeProps = {this.changeProps}/>
+                            }/>
                             
                         </Routes>
                     </Fragment>

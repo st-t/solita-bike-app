@@ -48,7 +48,8 @@ def exec_query(query, args=[], batch=False):
     MySQLInit.commit()
 
     # Close the handle and return results
-    results = SQL_Query.fetchall()
+    try: results = SQL_Query.fetchall()
+    except: results = 0
     SQL_Query.close()
     return results
 
@@ -236,14 +237,22 @@ def scrape_journeys(console_log=False):
         exec_query(query, [])
     except: pass
 
+    # Fetch stations array as we need the IDs for validating
+    query = "SELECT id FROM `city_stations`;"
+    query_res = exec_query(query, [])
+    station_ids = []
+
+    for x in query_res:
+        station_ids.append(x[0])
+
     i = 1
     queries = 0
 
     # Datasets 
     files = [
-        'datasets/2021-05.csv'
-        #'datasets/2021-06.csv',
-        #'datasets/2021-07.csv'
+        'datasets/2021-05.csv',
+        'datasets/2021-06.csv',
+        'datasets/2021-07.csv'
     ]
 
     # Loop all files
@@ -300,7 +309,13 @@ def scrape_journeys(console_log=False):
                             continue 
                         
                         # Departure station is same as return station
+                        # Skip these since we want to display a map with a route
                         if data[4] == data[2]:
+                            continue
+
+                        # This stationID does not exist
+                        # The stations dataset did not include some stations, so skip them
+                        if not( int(data[2]) in station_ids and int(data[4]) in station_ids ):
                             continue
 
                         # Append data for batch query
@@ -399,11 +414,12 @@ def init_tables():
                 "`name` VARCHAR(64), " +\
                 "`address` VARCHAR(64), " +\
                 "`city` VARCHAR(64), " +\
+                "INDEX (`name`) USING BTREE, " \
                 "INDEX (`languageID`) USING BTREE, " \
                 "INDEX `FK_station` (`stationID`) USING BTREE, " +\
                 "INDEX (`stationID`, `languageID`) USING BTREE, " \
                 "CONSTRAINT `FK_station` FOREIGN KEY (`stationID`) " \
-                "REFERENCES `solita`.`city_stations` (`id`) ON DELETE CASCADE " \
+                "REFERENCES `bike-app`.`city_stations` (`id`) ON DELETE CASCADE " \
             ") " +\
             "COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB;"
 

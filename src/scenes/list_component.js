@@ -30,7 +30,7 @@ export default class NewList extends Component {
             data:{},
             test: '200 OK',
             pressed: 0,
-            canLoad: false
+            canLoad: false,
         }
 
         // Handle pagination clicks
@@ -48,7 +48,186 @@ export default class NewList extends Component {
     // Initialization(s) that requires DOM nodes should go here
     componentDidMount() 
     {
-        //console.log('data:' + this.props.data.column_data[0][0] ); 
+        // Listen the server for messages
+        socket.on('message', async (msg) => 
+        {
+            this.setState({data:msg})
+            this.changeProps({displayFilters: false});
+
+            // Message from socketio 
+            let json_response = this.state.data; 
+
+            // Pagination handle
+            let handlePagination = false;
+
+            // Check if we got some data and not an empty object
+            if( String( typeof(json_response) ) === 'string' )
+            {
+                // Parse the json string 
+                const obj = JSON.parse(json_response);
+
+                // We recieved journey data
+                if( obj.hasOwnProperty('journeys') )
+                {
+                    // Display loading message
+                    this.props.changeLoading(false);
+
+                    // Handle json data
+                    await this.handleJourneyData(obj);
+                    handlePagination = true;
+                }
+
+                // We recieved stations data
+                if( obj.hasOwnProperty('stations') )
+                {
+                    // Display loading message
+                    this.props.changeLoading(false);
+
+                    // Handle json data
+                    await this.handleStationData(obj);
+                    handlePagination = true;
+                }
+                
+                // Some logic for displaying correct page numbers 
+                if(handlePagination)
+                {
+                    const { 
+                        calledLast, scrolledPage, 
+                        pageEntries, fetchEntriesAmount,
+                        totalRows, pagesToLoad
+
+                    } = this.props.data;
+                    
+                    if(scrolledPage < 1)
+                        this.props.changeProps({currentPage: 1});
+                    else
+                        this.props.changeProps({ currentPage: 1 + (pageEntries * scrolledPage) });
+
+                    if(calledLast)
+                    {
+                        let pageFix = (totalRows / pageEntries);
+                        let numPages = (fetchEntriesAmount / pageEntries);
+                        this.props.changeProps({ scrolledPage:  Math.floor( (totalRows / (pageEntries * numPages) ) ) });
+
+                        if( !(pageFix && pageFix < pagesToLoad) )
+                            this.props.changeProps({currentPage: numPages});
+                    }
+                    else 
+                        this.props.changeProps({currentPage: 1});
+                }
+
+                // Server returned amount of rows
+                // We need this to calculate if client wants to see last page
+                if( obj.hasOwnProperty('rows') )
+                {
+                    this.props.changeProps({totalRows: obj.rows});
+                    const { pageEntries, fetchEntriesAmount, scrolledPage } = this.props.data;
+
+                    let numReceived = (obj.rows / pageEntries);
+                    let numPages = (fetchEntriesAmount / pageEntries);
+
+                    // Check if there are more pages 
+                    // If not, disable further scrolling 
+                    if(numReceived < numPages)
+                        this.props.changeProps({calledLast: true});
+                    if( numReceived < ( numPages + (numPages * scrolledPage) ) )
+                        this.props.changeProps({stopScroll: true});
+                }
+
+                // Server returned first id result
+                // We're using this on pagination
+                if( obj.hasOwnProperty('first') )
+                {
+                    this.props.changeProps({firstRow: obj.first});
+                }
+                
+                // Server response finished 
+                if(obj.hasOwnProperty('done'))
+                {
+                    this.props.changeProps({displayFilters: true});
+                    this.props.changeLoading(true);
+                }
+            }
+        });
+    }
+    
+    // Handle server response
+    async handleJourneyData(obj) 
+    {
+        var lastID = 0;
+        const { column_data, station_ids } = this.props.data;
+
+        for(var key in obj.journeys) 
+        {
+            if( obj.journeys.hasOwnProperty(key) ) 
+            {
+                for( var attr in obj.journeys[key] ) 
+                {
+                    // console.log(id + " " + attr + " -> " + obj.journeys[key][attr]);
+
+                    switch(attr)
+                    {
+                        case "dstation": column_data[1].push( obj.journeys[key][attr] ); break;
+                        case "rstation": column_data[2].push( obj.journeys[key][attr] ); break;
+                        case "distance": column_data[3].push( obj.journeys[key][attr] ); break;
+                        case "duration": column_data[4].push( obj.journeys[key][attr] ); break;
+                        case "departure": column_data[5].push( obj.journeys[key][attr] ); break;
+
+                        case "id":
+                        {
+                            lastID = obj.journeys[key][attr];
+                            column_data[0].push( obj.journeys[key][attr] );
+                            break;
+                        }
+
+                        // Long and latitude
+                        case "d_x": column_data[6].push( obj.journeys[key][attr] ); break;
+                        case "d_y": column_data[7].push( obj.journeys[key][attr] ); break;
+                        case "r_x": column_data[8].push( obj.journeys[key][attr] ); break;
+                        case "r_y": column_data[9].push( obj.journeys[key][attr] ); break;
+
+                        // Station ids to generate a link
+                        case "d_id": station_ids[0].push( obj.journeys[key][attr] ); break; // Departure
+                        case "r_id": station_ids[1].push( obj.journeys[key][attr] ); break; // Return
+                        default: break;
+                    }
+                }
+            }
+        }
+        if(lastID) this.props.changeProps({lastFetchID: lastID});
+    }
+
+    // Handle server response
+    async handleStationData(obj) 
+    {
+        var lastID = 0;
+        const { column_data, station_ids } = this.props.data;
+
+        for(var key in obj.stations) 
+        {
+            if( obj.stations.hasOwnProperty(key) ) 
+            {
+                for( var attr in obj.stations[key] ) 
+                {
+                    switch(attr)
+                    {
+                        case "station": column_data[1].push( obj.stations[key][attr] ); break;
+                        case "long": column_data[2].push( obj.stations[key][attr] ); break;
+                        case "lat": column_data[3].push( obj.stations[key][attr] ); break;
+
+                        case "id":
+                        {
+                            lastID = obj.stations[key][attr];
+                            station_ids[0].push( obj.stations[key][attr] );
+                            column_data[0].push( obj.stations[key][attr] );
+                            break;
+                        }
+                        default: break;
+                    }
+                }
+            }
+        }
+        if(lastID) this.props.changeProps({lastFetchID: lastID});
     }
 
     // Clients wants to sort by column
@@ -91,20 +270,28 @@ export default class NewList extends Component {
     renderColumnTitles()
     {
         const titles = [];
-        const { columns } = this.props.data;
+        const { columns, sort_columns, have_sort } = this.props.data;
 
         for (let i = 0; i < columns.length; i++)
             titles.push( columns[i] );
         
         const html = titles.map( (string, index)  => 
         {
-            // Client wants to sort by column 
+            // If we want to have a sort option for this column
+            let haveSort = (have_sort[index]);
+
+            // If client wants to sort by column 
             // Change arrow direction on click
             return (
                 <li key={index}>{string}
-                { this.props.data.sort_columns[index] === true 
-                ? <FontAwesomeIcon className={styles.sort_icon_active} icon={faAngleUp} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} /> 
-                : <FontAwesomeIcon className={styles.sort_icon} icon={faAngleDown} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} /> }
+                    { haveSort === true
+                    ?
+                    <>
+                        { sort_columns[index] === true 
+                        ? <FontAwesomeIcon className={styles.sort_icon_active} icon={faAngleUp} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} /> 
+                        : <FontAwesomeIcon className={styles.sort_icon} icon={faAngleDown} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} /> }
+                    </>
+                    : null }
                 </li>
             );
         });
@@ -118,9 +305,9 @@ export default class NewList extends Component {
         this.setState({canLoad: true});
 
         // Client clicked an expanded column => close it 
-        if(num === this.props.data.expandJourney)
+        if(num === this.props.data.expandJourney || !this.props.data.linkStations)
         {
-            this.props.changeProps({expandJourney: 0 });
+            this.props.changeProps({expandJourney: 0});
             return; 
         }
 
@@ -167,24 +354,21 @@ export default class NewList extends Component {
                         #{column_data[0][idx + index]}
                         <p className={styles.journey}></p>
 
-                        {/* Expanded content */}
+                        {/* Expanded content journeys */}
                         <div className = {`${expandJourney === column_data[0][idx + index] ? styles.entry_visible : styles.entry_hidden} `} >
 
-                            <div className = {`${expandJourney === column_data[0][idx + index] && linkStations == true ? styles.entry_content_l_j : styles.entry_hidden} `}>
+                            <div className = {`${expandJourney === column_data[0][idx + index] ? styles.entry_content_l_j : styles.entry_hidden} `}>
                                 {
-                                    expandedColumns.indexOf(idx + index) === -1 ?
-                                    <div>error</div> :
-                                    <GoogleMaps data = {this.state} expanded={expandJourney} coordinates={column_data} coord_index={(idx+index)}/>
+                                    expandedColumns.indexOf(idx + index) === -1 
+                                    ? <div>API error</div> 
+                                    : < GoogleMaps 
+                                        data = {this.state} 
+                                        expanded={expandJourney} 
+                                        coordinates={column_data} 
+                                        coord_index={(idx+index)}
+                                        isJourney={linkStations}
+                                        />
                                 }
-                            </div>
-
-                            <div className = {`${expandJourney === column_data[0][idx + index] && linkStations == false ? styles.entry_content_l : styles.entry_hidden} `}>
-                                
-                                    <div>stations content</div> 
-                            </div>
-
-                            <div className={`${expandJourney === column_data[0][idx + index] && linkStations == false ? styles.entry_content_r : styles.entry_hidden} `}>
-                                stations content_right
                             </div>
                         </div>
                     </li>
@@ -202,7 +386,7 @@ export default class NewList extends Component {
     renderEntry(index, mappedEntry)
     {
         const titles = [], headers = [];
-        const { column_data, columns, linkStations } = this.props.data;
+        const { column_data, columns, linkStations, station_ids } = this.props.data;
         
         // Column data itself
         for (let i = 1; i < columns.length; i++)
@@ -212,26 +396,43 @@ export default class NewList extends Component {
         // This will be hidden on the normal screen width 
         for (let i = 1; i < columns.length; i++)
             headers.push( columns[i] );
-        
+
         const html = titles.map( (string, hIndex)  => 
         {
             // React starts yelling about missing key without this
             if(mappedEntry) columnNum ++;
-
-            // <Link to="/stations"> </Link>
-            // console.log('string: %s index: %i', string, hIndex);
             
+            let stationLink;
             var renderLink = false;
             
-            // If we are in journeys list, create a link for return and departure stations
+            // Create a link for stations
             if(linkStations)
-                if(hIndex == 0 || hIndex == 1) renderLink = true;
-            
+            {
+                // We are on journey list, create links for return and departure
+                // station_ids[0] = departure
+                // station_ids[1] = return
+                // [index] being list column index
+                if(hIndex === 0 || hIndex === 1)
+                {
+                    renderLink = true;  
+                    stationLink = '/station/' + station_ids[hIndex][index];
+                } 
+            }
+            else 
+            {
+                // We are on stations list, just create a link for the station
+                if(hIndex === 0) 
+                {
+                    renderLink = true;
+                    stationLink = '/station/' + station_ids[hIndex][index];
+                }
+            }
+
             return (
                 <li className={styles.entry} key={columnNum}>
                     {
                         renderLink === true 
-                        ? <Link className={styles.station_link} to="/stations">{string}<p>{headers[hIndex]}</p></Link> 
+                        ? <Link className={styles.station_link} to={stationLink}>{string}<p>{headers[hIndex]}</p></Link> 
                         : <a>{string}<p>{headers[hIndex]}</p></a>
                     }
                 </li>
@@ -322,8 +523,14 @@ export default class NewList extends Component {
             return;
         }
 
-        if(list_type === 'journey')
-            this.prepareJourneyRequest(wentToLast, setFetch, true, scroll);
+        switch(list_type)
+        {
+            case 'journey':
+                this.prepareJourneyRequest(wentToLast, setFetch, true, scroll); break;
+            case 'station':
+                this.prepareStationRequest(wentToLast, setFetch, true, scroll); break;
+            default: break;
+        }
     }
 
     // Client wants more pages, fetch them 
@@ -335,11 +542,13 @@ export default class NewList extends Component {
             lastFetchID, 
             actualScrolled, 
             wentToLast,
-            list_type
+            list_type,
+            stopScroll
+
         } = this.props.data;
 
         // We are on the very last page, don't go further.
-        if(calledLast) return;
+        if(calledLast || stopScroll) return;
 
         this.resetListData();
         this.props.changeProps({goingToLast: true});
@@ -388,8 +597,37 @@ export default class NewList extends Component {
             this.props.changeProps({actualScrolled: scroll});
         }
         
-        if(list_type === 'journey')
-            this.prepareJourneyRequest(toLast, lastFetchID, false, scroll);
+        switch(list_type)
+        {
+            case 'journey':
+                this.prepareJourneyRequest(toLast, lastFetchID, false, scroll); break;
+            case 'station':
+                this.prepareStationRequest(toLast, lastFetchID, false, scroll); break;
+            default: break;
+        }
+    }
+
+    // Sends a request to server 
+    prepareStationRequest(val, setFetch, prevPage, var_scrolled=0)
+    {
+        const { 
+            fetchEntriesAmount,
+            sortColumn, search
+
+        } = this.props.data;
+
+        const obj = 
+        {
+            type: 'stations',
+            last: val,
+            prev: prevPage,
+            limit: fetchEntriesAmount,
+            scrolled: var_scrolled,
+            lastID: setFetch,
+            sort: sortColumn,
+            search: search
+        };
+        this.props.constructRequest(obj);
     }
 
     // Sends a request to server 
@@ -472,7 +710,7 @@ export default class NewList extends Component {
     }
 
     // Client clicked search button 
-    handleSearchBtn(e)
+    handleSearchBtn()
     {
         this.props.changeProps({displayNoResults: false});
         this.props.searchCallback(this.props.data.search);
@@ -481,7 +719,7 @@ export default class NewList extends Component {
     // Render the component
     render()
     {
-        const { displayFilters, calledLast, scrolledPage } = this.props.data;
+        const { displayFilters, calledLast, scrolledPage, stopScroll } = this.props.data;
 
         return (
             <>
@@ -525,11 +763,11 @@ export default class NewList extends Component {
                     </li>
                     {this.renderPages()}
                     <li>
-                        <FontAwesomeIcon className={`${calledLast === true ? styles.pageSkipDeactivated : styles.pageScroller} `}
+                        <FontAwesomeIcon className={`${calledLast === true || stopScroll ? styles.pageSkipDeactivated : styles.pageScroller} `}
                         icon={faAngleRight} size="xs" onClick = { () => this.nextPages(false) } />
                     </li>
                     <li>
-                        <FontAwesomeIcon className={`${calledLast === true ? styles.pageSkipDeactivated : styles.pageSkip} `}
+                        <FontAwesomeIcon className={`${calledLast === true || stopScroll ? styles.pageSkipDeactivated : styles.pageSkip} `}
                         icon={faCaretRight} size="xs" onClick = { () => this.nextPages(true) } />
                     </li>
                 </ul>

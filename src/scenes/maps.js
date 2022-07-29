@@ -66,7 +66,7 @@ class GoogleMaps extends Component
             );
         };
         
-        if(!this.props.data.canLoad || lastLoaded === pressed) return;
+        //if(!this.props.data.canLoad || lastLoaded === pressed) return;
         lastLoaded = pressed;
 
         const defaultMapOptions = {
@@ -99,11 +99,56 @@ class GoogleMaps extends Component
         );
     }
 
+    getMapLocation()
+    {
+        console.log('called map location');
+        //if(!this.props.data.canLoad || lastLoaded === pressed) return;
+
+        const renderMarkers = (map, maps) => {
+            new maps.Marker({
+              position: this.state.currentLocation,
+              map,
+              title: 'Hello World!'
+            });
+          }
+
+        const defaultMapOptions = {
+            fullscreenControl: false,
+            fullscreenControlOptions: false,
+            controlSize: false,
+            rotateControl: false, 
+            rotateControlOptions: false, 
+            scaleControl: false,
+            zoomControl: false, 
+            zoomControlOptions: false,
+            draggableCursor: "default", 
+            draggingCursor: "pointer"
+        };
+
+        return (
+            <div className={styles.maps_outer}>
+                <div className={styles.maps}>
+                    <GoogleMapReact
+                        bootstrapURLKeys={{key: "AIzaSyDVxd62MyhKyEmEIqvsv3R9cPKw6pX5H58"}}
+                        defaultCenter={{ lat: 60.16582, lng: 24.840319 }}
+                        options={defaultMapOptions}
+                        defaultZoom={14}
+                        center={this.state.currentLocation}
+                        yesIWantToUseGoogleMapApiInternals
+                        onGoogleApiLoaded={({ map, maps }) => renderMarkers(map, maps)}
+                    />
+                </div>
+            </div>
+        );
+    }
+
     render() 
     {
+        const {isJourney} = this.props;
+
         return (
             <>
-                {this.getMapsRoute()}
+                { isJourney === true ? this.getMapsRoute() : this.getMapLocation() }
             </>
         );
     }
