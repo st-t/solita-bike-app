@@ -56,7 +56,11 @@ const MobileNavLinks = () =>
             <div id={styles.sidebarMenu} >
                 <ul className={styles.sidebarMenuInner}>
                     <li>City-bike-app<span>Navigation Menu</span></li>
-                    <li><a href="https://vanila.io" target="_blank">Link</a></li>
+                    
+                    <li><Link to="/" className={styles.mobileLink}>Journeys</Link></li>
+                    <li><Link to="/stations" className={styles.mobileLink}>Stations</Link></li>
+                    <li><Link to="/settings" className={styles.mobileLink}>Settings</Link></li>
+                    <li><Link to="/create" className={styles.mobileLink}>Add New</Link></li>
                 </ul>
             </div> 
         </div>

@@ -312,7 +312,8 @@ export default class index extends Component
             metersChecked, secondsChecked,
             fetchEntriesAmount, lastFetchID, 
             goToLast, sortColumn, 
-            actualScrolled, search
+            actualScrolled, search,
+            pageEntries
 
         } = this.state;
 
@@ -337,6 +338,7 @@ export default class index extends Component
                 amount: filterSeconds
             },
             limit: fetchEntriesAmount,
+            perPage: pageEntries,
             scrolled: actualScrolled,
             lastID: lastFetchID,
             sort: sortColumn,

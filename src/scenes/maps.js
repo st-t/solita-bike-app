@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import GoogleMapReact from "google-map-react";
 import styles from './styles.module.css';
+import marker from './marker.module.css';
 
 let mapsObj = null;
 var mapInit = false;
@@ -26,8 +27,8 @@ const defaultMapOptions =
 
 const Marker = () => {
     return <>
-        <div className={styles.pin}></div>
-        <div className={styles.pulse}></div>
+        <div className={marker.pin}></div>
+        <div className={marker.pulse}></div>
     </>
 }
 

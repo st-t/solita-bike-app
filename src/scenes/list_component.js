@@ -15,6 +15,7 @@ import { faSearch,
         faCaretRight } from '@fortawesome/free-solid-svg-icons'; 
 
 
+var siteLoaded = false;
 var columnNum = 0;
 var expandedColumns = [];
 
@@ -32,6 +33,7 @@ export default class NewList extends Component {
             pressed: 0,
             canLoad: false,
             mapPreview: false,
+            canScroll: false,
         }
 
         // Handle pagination clicks
@@ -70,6 +72,9 @@ export default class NewList extends Component {
                 // We recieved journey data
                 if( obj.hasOwnProperty('journeys') )
                 {
+                    // Disable scrolling
+                    this.setState({canScroll: false});
+
                     // Display loading message
                     this.props.changeLoading(false);
 
@@ -81,6 +86,10 @@ export default class NewList extends Component {
                 // We recieved stations data
                 if( obj.hasOwnProperty('stations') )
                 {
+                    // Disable scrolling
+                    siteLoaded = false;
+                    this.setState({canScroll: false});
+
                     // Display loading message
                     this.props.changeLoading(false);
 
@@ -145,11 +154,18 @@ export default class NewList extends Component {
                 // Server response finished 
                 if(obj.hasOwnProperty('done'))
                 {
+                    this.setState({canScroll: true}, this.siteLoad);
                     this.props.changeProps({displayFilters: true});
                     this.props.changeLoading(true);
                 }
             }
         });
+    }
+
+    // Used to stop pagescrolls
+    siteLoad()
+    {
+        siteLoaded = true;
     }
     
     // Handle server response
@@ -170,9 +186,33 @@ export default class NewList extends Component {
                     {
                         case "dstation": column_data[1].push( obj.journeys[key][attr] ); break;
                         case "rstation": column_data[2].push( obj.journeys[key][attr] ); break;
-                        case "distance": column_data[3].push( obj.journeys[key][attr] ); break;
-                        case "duration": column_data[4].push( obj.journeys[key][attr] ); break;
                         case "departure": column_data[5].push( obj.journeys[key][attr] ); break;
+                        
+                        // Parse distance correctly
+                        case "distance": 
+                        {
+                            let dist = obj.journeys[key][attr];
+
+                            if( Number(dist) < 1000 )
+                                dist = String(dist) + ' m'
+                            else 
+                                dist = String(parseFloat(Number(dist / 1000).toFixed(2))) + ' km'
+
+                            column_data[3].push(dist); 
+                            break;
+                        }
+
+                        // Parse duration
+                        case "duration": 
+                        {
+                            let dur = obj.journeys[key][attr];
+
+                            if( Number(dur) < 60 ) dur = String(dur) + 's';
+                            else dur = this.durationToString(dur);
+
+                            column_data[4].push(dur); 
+                            break;
+                        }
 
                         case "id":
                         {
@@ -195,6 +235,7 @@ export default class NewList extends Component {
                 }
             }
         }
+
         if(lastID) this.props.changeProps({lastFetchID: lastID});
     }
 
@@ -229,6 +270,25 @@ export default class NewList extends Component {
             }
         }
         if(lastID) this.props.changeProps({lastFetchID: lastID});
+    }
+
+    // Returns passed seconds as time string
+    durationToString(seconds)
+    {
+        var hours   = Math.floor(seconds / 3600);
+        var minutes = Math.floor( ( seconds - (hours * 3600) ) / 60 );
+        var seconds = seconds - (hours * 3600) - (minutes * 60);
+
+        if(hours) hours = hours + 'h ';
+        else hours = ''; 
+
+        if(minutes) minutes = minutes + 'min ';
+        else minutes = ''; 
+
+        if(seconds) seconds = seconds + 's';
+        else seconds = ''; 
+
+        return hours + minutes + seconds;
     }
 
     // Clients wants to sort by column
@@ -329,7 +389,8 @@ export default class NewList extends Component {
             currentPage, 
             pageEntries, 
             expandJourney,
-            linkStations
+            linkStations,
+            fetchEntriesAmount
 
         } = this.props.data;
 
@@ -369,7 +430,7 @@ export default class NewList extends Component {
                                         coord_index={(idx+index)}
                                         isJourney={linkStations}
                                         changeProps = {this.props.changeProps} 
-                                        />
+                                    />
                                 }
                             </div>
                         </div>
@@ -492,8 +553,8 @@ export default class NewList extends Component {
             list_type 
         } = this.props.data;
 
-        // We are on the first page. We can't go back.
-        if(scrolledPage === 0) return;
+        // We are on the first page or page is loading, return
+        if(scrolledPage === 0 || !siteLoaded) return;
 
         this.resetListData();
         var setFetch = (firstRow);
@@ -549,8 +610,8 @@ export default class NewList extends Component {
 
         } = this.props.data;
 
-        // We are on the very last page, don't go further.
-        if(calledLast || stopScroll) return;
+        // We are on the very last page or page is loading, return
+        if(calledLast || stopScroll || !siteLoaded) return;
 
         this.resetListData();
         this.props.changeProps({goingToLast: true});
@@ -629,6 +690,8 @@ export default class NewList extends Component {
             sort: sortColumn,
             search: search
         };
+        siteLoaded = false;
+        this.setState({canScroll: false});
         this.props.constructRequest(obj);
     }
 
@@ -641,7 +704,8 @@ export default class NewList extends Component {
             meterUnit, timeUnit,
             overSeconds, overMeters,
             metersChecked, secondsChecked, 
-            sortColumn, search
+            sortColumn, search,
+            pageEntries
 
         } = this.props.data;
 
@@ -664,12 +728,15 @@ export default class NewList extends Component {
                 unit: timeUnit,
                 amount: filterSeconds
             },
+            perPage: pageEntries,
             limit: fetchEntriesAmount,
             scrolled: var_scrolled,
             lastID: setFetch,
             sort: sortColumn,
             search: search
         };
+        siteLoaded = false;
+        this.setState({canScroll: false});
         this.props.constructRequest(obj);
     }
 

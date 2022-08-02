@@ -98,8 +98,6 @@
     clip-path: inset(0px -15px 0px -15px);
 }
 
-
-
 .list ul:first-child li {
     background-color:rgba(19, 91, 133, 0.062);
     color:#fff;
@@ -114,7 +112,7 @@
 .list ul > li {
     display: table-cell;
     padding:.5em 1em;
-    min-width: 10px;
+    min-width: 20px;
 }
 
 .list ul p {
@@ -157,7 +155,7 @@
     display: block;
     position: absolute;
     opacity: 1;
-    transition: 4.3s;
+    transition: 0.1s;
     left: 70%;
     width: 70vw;
     height: 340px;
@@ -305,6 +303,9 @@
 }
 
 @media screen and (max-width:1316px) {
+    .list ul > li {
+        padding:.5em 0.75em;
+    }
     .searchWrap {
         left: 86%;
         top: 30px;

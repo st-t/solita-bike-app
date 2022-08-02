@@ -205,6 +205,7 @@ def handle_message(data):
             socketio.emit('message', jr, to=request.sid)
             print(' [#] Done')
 
+
         # Client wants stations data 
         if message['type'] == 'stations':
             
@@ -378,6 +379,7 @@ def handle_message(data):
             socketio.emit('message', jr, to=request.sid)
             print(' [#] Finished query for', request.sid)
 
+
         # Client wants journey data 
         if message['type'] == 'journeys':
             
@@ -387,6 +389,8 @@ def handle_message(data):
             previous = x['prev']
             search = x['search']
             last_page = x['last']
+            per_page = x['perPage']
+            last_id = x['lastID']
             scrolled = x['scrolled']
             has_meters = x['distance']['metersFilter']
             has_seconds = x['duration']['secondsFilter']
@@ -394,12 +398,17 @@ def handle_message(data):
             total_seconds = x['duration']['amount']
             duration_over = x['duration']['over']
             distance_over = x['distance']['over']
-
-            # Scroll logic
             scrolled += 1
-            show_entries = entries
-            entries = (entries * scrolled)
-            if(entries == 0): entries = show_entries
+
+            # Some scroll logic for last pages
+            if not last_page:
+                show_entries = entries
+                if scrolled: entries = (entries * scrolled)
+                else: entries = 0
+                if(entries == 0): entries = show_entries
+
+            queryFromLast = "WHERE j.id < {} ".format(last_id)
+            if scrolled == 1: queryFromLast = ''
 
             # Distance
             if has_meters:
@@ -420,15 +429,23 @@ def handle_message(data):
             measure = '>'
             query_dist = ''
             if distance_over: measure = '<'
-            if has_meters: query_dist = ' WHERE j.distance {} {} '.format(measure, total_meters)
+
+            if has_meters and scrolled == 1: 
+                query_dist = ' WHERE j.distance {} {} '.format(measure, total_meters)
+            elif has_meters:
+                query_dist = ' AND j.distance {} {} '.format(measure, total_meters)
             
             # Duration
             measure = '>'
             query_dur = ''
             if duration_over: measure = '<'
-            if has_seconds: 
-                if has_meters: query_dur = ' AND j.duration {} {} '.format(measure, total_seconds)
-                else: query_dur = ' WHERE j.duration {} {} '.format(measure, total_seconds)
+
+            if has_seconds and has_meters: 
+                query_dur = ' AND j.duration {} {} '.format(measure, total_seconds)
+            elif has_seconds and scrolled == 1: 
+                query_dur = ' WHERE j.duration {} {} '.format(measure, total_seconds)
+            elif has_seconds:
+                query_dur = ' AND j.duration {} {} '.format(measure, total_seconds)
 
             # Search
             query_params = []
@@ -436,7 +453,7 @@ def handle_message(data):
 
             if search:
                 query_params = [f"{search}%", f"%{search}"]
-                if not has_seconds and not has_meters:
+                if not has_seconds and not has_meters and scrolled == 1:
                     search_query = " WHERE (t.name LIKE %s OR t.name LIKE %s) "
                 else: search_query = " AND (t.name LIKE %s OR t.name LIKE %s) "
 
@@ -466,7 +483,6 @@ def handle_message(data):
                             search_query.replace('WHERE', 'AND')
                         )
 
-            print('count query:', query)
             results = db.exec_query(query, query_params)
             
             # Inform client how many rows were returned
@@ -510,7 +526,8 @@ def handle_message(data):
                             "ON t.stationID = j.departure_station AND t.languageID=1 " \
                             "LEFT JOIN `city_translations` tr " \
                             "ON tr.stationID = j.return_station AND tr.languageID=1 " \
-                            "{}{}{}ORDER BY {} DESC LIMIT {}".format(
+                            "{}{}{}{}ORDER BY {} DESC LIMIT {}".format(
+                            queryFromLast,
                             query_dist, 
                             query_dur, 
                             search_query,
@@ -525,7 +542,7 @@ def handle_message(data):
                         "ON s.id = t.stationID " \
                         "LEFT JOIN `city_stations` sr " \
                         "ON sr.id = tr.stationID " \
-                        "ORDER BY {} ASC LIMIT {};".format(column_sort, entries)
+                        "{}ORDER BY {} ASC LIMIT {};".format(queryFromLast, column_sort, (entries + int(per_page)))
             
             # Fetch
             print('\n{}\n'.format(query))
@@ -547,19 +564,26 @@ def handle_message(data):
             for row in results:
 
                 total += 1
-                view_total = (entries - show_entries)
 
                 # Logic for pagescrolling
                 if not last_page:
+                    view_total = (entries - show_entries)
                     if not ( total > view_total ): continue
+                """if not last_page:
+                    if not ( total > view_total ): 
+                        print('return 1 total', total, view_total)
+                        continue
                 else: 
-                    if ( total > view_total and view_total > 0 or total > show_entries ): continue
+                    if ( total > view_total and view_total > 0 or total > show_entries ): 
+                        if stopscroll:
+                            print('return 2 total', total, view_total, show_entries)
+                            continue"""
 
                 i += 1
                 idx = row[0]
 
                 # Send client first rowID since they need it on some pagination functions
-                if first_id == -1 and not previous: 
+                if first_id == -1 : #and not previous: 
                     first_id = idx
                     r = {"first": first_id}
                     jr = json.dumps(r)
@@ -590,7 +614,7 @@ def handle_message(data):
 
                     i = 0
                     x = {"journeys":{}}
-            
+
             # Send the rest, if there's something left
             if i:
                 journey_data = json.dumps(x)

@@ -310,8 +310,6 @@ export default class index extends Component
             const { stations_data, stationsLoaded } = this.state;
 
             if(!stationsLoaded) return;
-
-            console.log('LEN: %i', stations_data[1].length);
             
             // If stations data contains searched term, push it into dropdown
             for(let i = 0; i < stations_data[1].length; i++)   
