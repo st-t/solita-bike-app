@@ -279,13 +279,34 @@ class GoogleMaps extends Component
     // Renders a marker when client is on station view 
     renderMaps(markers=false)
     {
+        let loc;
+
+        if(markers) 
+        {
+            const {station} = this.props.data;
+
+            if(!station) return;
+
+            // 4: x 5: y
+            // x: long
+            loc = { lat: station[5], lng: station[4] }
+        } 
+        else loc = this.state.currentLocation;
+
         const renderMarkers = (map, maps) => 
         {
             mapsObj = map;
             isApiLoaded = true;
 
-            if(markers)
-                new maps.Marker({position: this.state.currentLocation, map}); 
+            if(markers) 
+            {
+                const {station} = this.props.data;
+
+                // 4: x 5: y
+                // x: long
+                let loc = { lat: station[5], lng: station[4] }
+                new maps.Marker({position: loc, map}); 
+            } 
         }
 
         return (
@@ -295,8 +316,8 @@ class GoogleMaps extends Component
                         bootstrapURLKeys={{key: "AIzaSyDVxd62MyhKyEmEIqvsv3R9cPKw6pX5H58"}}
                         defaultCenter={{ lat: 60.16582, lng: 24.840319 }}
                         options={defaultMapOptions}
-                        defaultZoom={5}
-                        center={this.state.currentLocation}
+                        defaultZoom={13}
+                        center={loc}
                         yesIWantToUseGoogleMapApiInternals
                         onGoogleApiLoaded={({ map, maps }) => renderMarkers(map, maps)}
                     />

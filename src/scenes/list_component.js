@@ -184,10 +184,6 @@ export default class NewList extends Component {
 
                     switch(attr)
                     {
-                        case "dstation": column_data[1].push( obj.journeys[key][attr] ); break;
-                        case "rstation": column_data[2].push( obj.journeys[key][attr] ); break;
-                        case "departure": column_data[5].push( obj.journeys[key][attr] ); break;
-                        
                         // Parse distance correctly
                         case "distance": 
                         {
@@ -220,6 +216,11 @@ export default class NewList extends Component {
                             column_data[0].push( obj.journeys[key][attr] );
                             break;
                         }
+                        
+                        // Names & Time
+                        case "dstation": column_data[1].push( obj.journeys[key][attr] ); break;
+                        case "rstation": column_data[2].push( obj.journeys[key][attr] ); break;
+                        case "departure": column_data[5].push( obj.journeys[key][attr] ); break;
 
                         // Long and latitude
                         case "d_x": column_data[6].push( obj.journeys[key][attr] ); break;
@@ -688,10 +689,11 @@ export default class NewList extends Component {
             scrolled: var_scrolled,
             lastID: setFetch,
             sort: sortColumn,
-            search: search
+            search: search,
         };
         siteLoaded = false;
         this.setState({canScroll: false});
+        this.props.changeProps({stopScroll: false});
         this.props.constructRequest(obj);
     }
 
@@ -737,6 +739,7 @@ export default class NewList extends Component {
         };
         siteLoaded = false;
         this.setState({canScroll: false});
+        this.props.changeProps({stopScroll: false});
         this.props.constructRequest(obj);
     }
 

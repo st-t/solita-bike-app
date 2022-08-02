@@ -1,10 +1,11 @@
 import React, { Component, useState } from 'react'
 import { useParams } from 'react-router-dom';
-import DatePicker from "react-datepicker";
-import GoogleMaps from '../maps';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCogs } from '@fortawesome/free-solid-svg-icons'; 
 
+import socket from '../../addons/socket';
+import DatePicker from "react-datepicker";
+import GoogleMaps from '../maps';
 import styles from './index.module.css';
 import anims from '../anims.module.css';
 import "react-datepicker/dist/react-datepicker.css"
@@ -58,6 +59,7 @@ class Station extends Component
         {
             data:{},
             filters:{},
+            id: null,
             expandFilters: false,
             needApply: false,
             filtersChecked: false,
@@ -66,19 +68,207 @@ class Station extends Component
             linkStations: false,
             isCreate: false,
             mapPreview: false,
-        };
 
+            // Station info 
+            // id, name, address, city, x, y
+            station: ['', '', '', '', '', ''],
+
+            journeys_to: 0,
+            journeys_from: 0,
+            distance_to: 0,
+            distance_from: 0,
+            top_end: [ [], [] ],
+            top_start: [ [], [] ],
+
+            pageLoaded: false,
+        };
+        
         this.changeProps = this.changeProps.bind(this);
     }
 
+    // Initialization(s) that requires DOM nodes should go here
     componentDidMount() 
     {
-        console.log('params: ' + this.props.params.stationID);
-        this.props.changeProps({isLoaded: true});
+        this.setState({pageLoaded: false});
+        this.props.changeProps({isLoaded: false});
+        
+        // Start with making a request
+        this.stationRequest();
+
+        // Listen the server for messages
+        socket.on('message', (msg) => 
+        {
+            this.setState({data:msg})
+
+            // Message from socketio 
+            let json_response = this.state.data; 
+
+            // Check if we got some data and not an empty object
+            if( String( typeof(json_response) ) === 'string' )
+            {
+                // Parse the json string 
+                const obj = JSON.parse(json_response);
+
+                // Station info
+                if( obj.hasOwnProperty('station_info') )
+                {
+                    let values = [
+                        this.props.params.stationID,
+                        obj.station_info.name,
+                        obj.station_info.address,
+                        obj.station_info.city,
+                        obj.station_info.x,
+                        obj.station_info.y
+                    ]
+
+                    this.setState({station : values});
+                }
+
+                // Journeys to this station
+                if( obj.hasOwnProperty('station_journeys_to') )
+                {
+                    this.setState({journeys_to : obj.station_journeys_to.num});
+                }
+
+                // Journeys from this station
+                if( obj.hasOwnProperty('station_journeys_from') )
+                {
+                    this.setState({journeys_from : obj.station_journeys_from.num});
+                } 
+
+                // Average distance traveled to this station
+                if( obj.hasOwnProperty('station_distance_to') )
+                {
+                    let dist_str;
+                    let fixed_dist = parseFloat(obj.station_distance_to.num).toFixed(0);
+
+                    if(fixed_dist < 1000)
+                        dist_str = String(fixed_dist) + ' m'
+                    else 
+                        dist_str = String( parseFloat(fixed_dist / 1000).toFixed(2) ) + ' km'
+
+                    this.setState({distance_to : dist_str});
+                }
+
+                // Average distance traveled from this station
+                if( obj.hasOwnProperty('station_distance_from') )
+                {
+                    let dist_str;
+                    let fixed_dist = parseFloat(obj.station_distance_from.num).toFixed(0);
+
+                    if(fixed_dist < 1000)
+                        dist_str = String(fixed_dist) + ' m'
+                    else 
+                        dist_str = String( parseFloat(fixed_dist / 1000).toFixed(2) ) + ' km'
+
+                    this.setState({distance_from : dist_str});
+                }
+
+                // Most popular return stations starting here 
+                if( obj.hasOwnProperty('station_popular_start') )
+                {
+                    this.handleResponse(1, obj);
+                }
+
+                // Most popular return stations ending here 
+                if( obj.hasOwnProperty('station_popular_end') )
+                {
+                    this.handleResponse(2, obj);
+                }
+
+                // Requests are handled
+                if( obj.hasOwnProperty('done') )
+                {
+                    this.setState({pageLoaded: true});
+                    this.props.changeProps({isLoaded: true});
+                }
+            }
+        });
     }
 
     changeProps = (data) => {
         this.setState(data);
+    }
+
+    // Called on page load
+    stationRequest()
+    {
+        // Pull stationID from props and send it to server 
+        const obj = { 
+            type: 'station_data', 
+            id: this.props.params.stationID ,
+            date: false,
+            from: 0,
+            to: 0
+        };
+        this.setState( {filters: obj}, this.serverReq );
+    }
+
+    // Sends a request to server
+    serverReq()
+    {
+        // Scroll user to top when we're loading the page
+        window.scrollTo(0, 0);
+        this.props.changeProps({isLoaded: false});
+
+        // Change the json to a string and send the request
+        const jsonRequest = JSON.stringify(this.state.filters); 
+        socket.send(jsonRequest);
+    }
+
+    // Handle some statistics
+    handleResponse(type, obj)
+    {
+        let data_obj;
+
+        switch(type)
+        {
+            case 1: data_obj = obj.station_popular_start; break;
+            case 2: data_obj = obj.station_popular_end; break;
+            default: break;
+        }
+        
+        const { top_end, top_start } = this.state;
+
+        for(var key in data_obj) 
+        {
+            if( data_obj.hasOwnProperty(key) ) 
+            {
+                for( var attr in data_obj[key] ) 
+                {
+                    // console.log(" " + attr + " -> " + data_obj[key][attr]);
+
+                    switch(attr)
+                    {
+                        case "count_s": 
+                        {
+                            if(type === 1) top_start[1].push( data_obj[key][attr] );
+                            break;
+                        }
+
+                        case "count_e": 
+                        {
+                            if(type === 2) top_end[1].push( data_obj[key][attr] );
+                            break;
+                        }
+
+                        case "station_s": 
+                        {
+                            if(type === 1) top_start[0].push( data_obj[key][attr] );
+                            break;
+                        }
+
+                        case "station_e": 
+                        {
+                            if(type === 2) top_end[0].push( data_obj[key][attr] );
+                            break;
+                        }
+
+                        default: break;
+                    }
+                }
+            }
+        }
     }
 
     // Client wants to see settings 
@@ -105,7 +295,11 @@ class Station extends Component
 
         start_date = start_date.toString();
         let data = start_date.split(' ');
-        let format_start = data[2] + '-' + data[3];
+
+        var d = Date.parse(data[1] + "1, 2012");
+        if( !isNaN(d) ) d = new Date(d).getMonth() + 1;
+
+        let format_start = data[3] + '-' + d + '-' + data[2]
 
         this.setState({
             fromDate: format_start,
@@ -116,7 +310,7 @@ class Station extends Component
 
         end_date = end_date.toString();
         data = end_date.split(' ');
-        let format_end = data[2] + '-' + data[3];
+        let format_end = data[3] + '-' + d + '-' + data[2]
 
         this.setState({
             toDate: format_end,
@@ -162,9 +356,9 @@ class Station extends Component
     // Client wants to apply filters 
     applyFilters()
     {
-        const { curApplied, filtersChecked, toDate, fromDate, needApply } = this.state;
+        const { curApplied, filtersChecked, toDate, fromDate, needApply, pageLoaded } = this.state;
         
-        if(!needApply) return; 
+        if(!needApply || !pageLoaded) return; 
 
         this.setState({
             needApply: false,
@@ -177,54 +371,113 @@ class Station extends Component
         // Set loading screen and callback request
         this.props.changeProps({isLoaded: false});
         
+        // Clear the page and refresh data 
         this.setState
-        ( {expandFilters: false}, this.formatJsonRequest );
+        ( {
+            expandFilters: false,
+            journeys_to: 0,
+            journeys_from: 0,
+            distance_to: 0,
+            distance_from: 0,
+            top_end: [[], []],
+            top_start: [[], []],
+            pageLoaded: false
+        
+        }, this.sendTimeRequest );
     }
 
-    // Callback for creating a request, called also on initialization
-    formatJsonRequest()
+    // Callback for creating a request
+    sendTimeRequest()
     {
-        const { curApplied } = this.state;
+        const { fromDate, toDate } = this.state;
 
-        // Filter data for backend query request
-        const obj = 
-        {
-            type: 'station',
-            fromDate: '',
-            toDate: ''
+        const obj = { 
+            type: 'station_data', 
+            id: this.props.params.stationID ,
+            date: true,
+            from: fromDate,
+            to: toDate
         };
-        this.setState( {filters: obj}, this.serverRequest );
+
+        this.setState( {filters: obj}, this.serverReq );
     }
 
-    // Sends a request to server
-    serverRequest()
+    // Render station statistics
+    renderTopReturn()
     {
-        // Change the json to a string and send the request
-        const jsonRequest = JSON.stringify(this.state.filters); 
-        //socket.send(jsonRequest);
+
+        const { top_start } = this.state;
+        const titles = [], counts = [];
+        
+        for (let i = 0; i < top_start[0].length; i++)
+        {
+            counts.push( top_start[1][i] );
+            titles.push( top_start[0][i] );
+        }
+
+        const html = titles.map( (string, index)  => 
+        {
+            return (
+                <li key={index}>{string} <p>({counts[index]} journeys)</p></li>
+            );
+        });
+
+        return html;
+    }
+
+    // Render station statistics
+    renderTopDeparture()
+    {
+        const { top_end } = this.state;
+        const titles = [], counts = [];
+        
+        for (let i = 0; i < top_end[0].length; i++)
+        {
+            counts.push( top_end[1][i] );
+            titles.push( top_end[0][i] );
+        }
+
+        const html = titles.map( (string, index)  => 
+        {
+            return (
+                <li key={index}>{string} <p>({counts[index]} journeys)</p></li>
+            );
+        });
+
+        return html;
     }
 
     render() 
     {
-        const { expandFilters, needApply, toDate, fromDate, linkStations, isCreate } = this.state;
-        const { stationID } = this.props.params;
+        const { 
+            expandFilters, needApply, 
+            toDate, fromDate, 
+            linkStations, isCreate, 
+            station, pageLoaded,
+            journeys_to, journeys_from,
+            distance_to, distance_from
+        } = this.state;
 
         return (
             <div className={anims.fade_class}>
                 <div className={styles.container}>
                     <div className={styles.station_header}>
 
-                        <p>#{stationID} Töölöntulli</p>
-                        <p className={styles.station_address}>Hanasaarenranta 1</p>
+                        <p>#{station[0]} {station[1]}</p>
+                        <p className={styles.station_address}>{station[2]}</p>
+                        <p className={styles.station_address}>{station[3]}</p>
 
                         <div className={styles.station_map}>
 
-                            < GoogleMaps 
-                                data = {this.state} 
-                                isJourney={linkStations}
-                                isCreate={isCreate}
-                                changeProps = {this.changeProps} 
-                            />
+                            {/* Render the map when station data is loaded */}
+                            {pageLoaded === true 
+                            ?   < GoogleMaps 
+                                    data = {this.state} 
+                                    isJourney={linkStations}
+                                    isCreate={isCreate}
+                                    changeProps = {this.changeProps} 
+                                />
+                            : null}
 
                         </div>
                     </div>
@@ -291,40 +544,32 @@ class Station extends Component
 
                             <ul className={styles.stats_list}>
                                 <li><p>Journeys to this station</p></li>
-                                <li><p>299</p></li>
+                                <li><p>{journeys_to}</p></li>
                             </ul>
 
                             <ul className={styles.stats_list}>
                                 <li><p>Journeys from this station</p></li>
-                                <li><p>299</p></li>
+                                <li><p>{journeys_from}</p></li>
                             </ul>
 
                             <ul className={styles.stats_list}>
                                 <li><p>Average distance traveled to this station</p></li>
-                                <li><p>2.23km</p></li>
+                                <li><p>{distance_to}</p></li>
                             </ul>
 
                             <ul className={styles.stats_list}>
                                 <li><p>Average distance traveled from this station</p></li>
-                                <li><p>5.23km</p></li>
+                                <li><p>{distance_from}</p></li>
                             </ul>
 
                             <p className={styles.list_head}>Most popular return stations starting here:</p>
                             <ol>
-                                <li>Keilalahti</li>
-                                <li>Revontulentie</li>
-                                <li>Keilalahti</li>
-                                <li>Revontulentie</li>
-                                <li>Revontulentie</li>
+                                {this.renderTopReturn()}
                             </ol>
 
                             <p className={styles.list_head}>Most popular departure stations ending here:</p>
                             <ol>
-                                <li>Hakalehto</li>
-                                <li>Oravannahkatori</li>
-                                <li>Hakalehto</li>
-                                <li>Oravannahkatori</li>
-                                <li>Oravannahkatori</li>
+                                {this.renderTopDeparture()}
                             </ol>
                         </div>
                     </div>

@@ -12,6 +12,7 @@
     color: #fff;
     width: 100%;
     margin-bottom: 120px;
+    padding-top: 20px;
 }
 
 .station_header {
@@ -328,9 +329,10 @@
     border-radius: 20px;
 }
 
-.stats_list  li {
+.stats_list li {
     width: 100%;
     padding-right: 4px;
+    text-align: center;
 }
 
 .stats_list:nth-child(odd) {
@@ -341,7 +343,6 @@
     background-color:rgba(65, 65, 65, 0.123);
 }
 
-
 .stats_list:nth-child(odd):hover {
     background-color:rgba(47, 53, 47, 0.151);
     transition: 0.3s;
@@ -350,4 +351,28 @@
 .stats_list:nth-child(even):hover {
     background-color:rgba(107, 107, 107, 0.096);
     transition: 0.3s;
+}
+
+.stats_wrap ol li {
+    min-width: 90%;
+}
+
+.stats_wrap ol li p {
+    width: 50%;
+    float: right;
+    display: flex;
+    flex-direction: row;
+    margin: auto;
+}
+
+@media screen and (max-width:1014px) {
+
+    .stats_wrap ol li p {
+        padding-bottom: 20px;
+        width: 100%;
+        float: center;
+        display: flex;
+        flex-direction: column;
+        margin: none;
+    }
 }

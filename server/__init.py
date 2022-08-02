@@ -4,6 +4,7 @@
 """
 
 from logging import exception
+from multiprocessing.sharedctypes import Value
 import __sql as db
 
 import json
@@ -38,6 +39,14 @@ def starts(var, string):
 
 
 
+def respond_to_client(socketio, json_response, sid):
+
+    # Sends a socketio message to client
+    res = json.dumps(json_response)
+    socketio.emit('message', res, to=sid)
+
+
+
 @socketio.on('disconnect', namespace='/')
 def socket_disconnect():
 
@@ -65,6 +74,155 @@ def handle_message(data):
 
         message = json.loads(data)
 
+        # Client landed on single station view
+        if message['type'] == 'station_data':
+            
+            # Station ID 
+            row = message['id']
+            has_date = message['date']
+            from_date = message['from']
+            to_date = message['to']
+
+
+            # Lets make sure client isn't doing an sql injection by modifying the link
+            try: row = int(row)
+            except ValueError: 
+                # Send a message here 
+                row = 0
+                return 
+
+            # Station info 
+            x = {"station_info":{}}
+            query = "SELECT t.name, t.address, t.city, s.x, s.y FROM `city_stations` s " \
+                        "LEFT JOIN `city_translations` t " \
+                        "ON t.stationID = s.id " \
+                        "AND t.languageID = 1 " \
+                    "WHERE s.id = {}".format(row)
+            
+            results = db.exec_query(query, [], False, False)
+            
+            if results: 
+                x["station_info"] = {
+                    "name": results[0][0], 
+                    "address": results[0][1], 
+                    "city": results[0][2], 
+                    "x": results[0][3], 
+                    "y": results[0][4]
+                }
+
+            respond_to_client(socketio, x, request.sid)
+
+            
+            time_column = "`departure`"
+            time_filter = ''
+            if has_date: time_filter = " AND {} BETWEEN '{}' AND '{}' ".format(time_column, from_date, to_date)
+
+            # Journeys to this station
+            x = {"station_journeys_to":{}}
+            query = "SELECT COUNT(id) AS num FROM `city_journeys` WHERE `return_station`= {}{};".format(row, time_filter)
+            results = db.exec_query(query, [], False, False)
+
+            if results: 
+                for y in results: x["station_journeys_to"] = {"num": y[0]}
+            respond_to_client(socketio, x, request.sid)
+
+
+            # Journeys from this station
+            x = {"station_journeys_from":{}}
+            query = "SELECT COUNT(*) AS num FROM `city_journeys` WHERE `departure_station`= {}{};".format(row, time_filter)
+            results = db.exec_query(query, [], False, False)
+
+            if results: 
+                for y in results: x["station_journeys_from"] = {"num": y[0]}
+            respond_to_client(socketio, x, request.sid)
+
+
+            time_column = "`departure`"
+            time_filter = ''
+            if has_date: time_filter = " AND {} BETWEEN '{}' AND '{}' ".format(time_column, from_date, to_date)
+
+            # Average distance traveled to this station
+            x = {"station_distance_to":{}}
+            query = "SELECT SUM(distance) AS num FROM `city_journeys` WHERE `return_station`= {}{};".format(row, time_filter)
+            results = db.exec_query(query, [], False, False)
+
+            if results: 
+                for y in results: x["station_distance_to"] = {"num": y[0]}
+            respond_to_client(socketio, x, request.sid)
+
+
+            time_column = "`return`"
+            time_filter = ''
+            if has_date: time_filter = " AND {} BETWEEN '{}' AND '{}' ".format(time_column, from_date, to_date)
+
+            # Average distance traveled from this station
+            x = {"station_distance_from":{}}
+            query = "SELECT SUM(distance) AS num FROM `city_journeys` WHERE `departure_station`= {}{};".format(row, time_filter)
+            results = db.exec_query(query, [], False, False)
+
+            if results: 
+                for y in results: x["station_distance_from"] = {"num": y[0]}
+            respond_to_client(socketio, x, request.sid)
+
+            
+            time_column = "j.departure"
+            time_filter = ''
+            if has_date: time_filter = " AND {} BETWEEN '{}' AND '{}' ".format(time_column, from_date, to_date)
+
+            # Most popular return stations starting here 
+            query = "SELECT t.name, COUNT(j.id) AS num " \
+                        "FROM `city_journeys` j " \
+                        "LEFT JOIN `city_translations` t " \
+                        "ON t.stationID = j.return_station " \
+                        "AND t.languageID = 1 " \
+                    "WHERE j.departure_station = {}{} ".format(row, time_filter) + \
+                    "GROUP BY j.return_station " \
+                    "ORDER BY num DESC LIMIT 5;"
+            
+            results = db.exec_query(query, [], False, False)
+
+            total = 0
+            r = {"station_popular_start":{}}
+
+            if results: 
+                for y in results: 
+                    total += 1
+                    r["station_popular_start"][total] = { "station_s": y[0], "count_s": y[1] }
+            
+            respond_to_client(socketio, r, request.sid)
+            
+            
+            time_column = "j.return"
+            time_filter = ''
+            if has_date: time_filter = " AND {} BETWEEN '{}' AND '{}' ".format(time_column, from_date, to_date)
+
+            # Most popular departure stations ending here 
+            query = "SELECT t.name, COUNT(j.id) AS num " \
+                        "FROM `city_journeys` j " \
+                        "LEFT JOIN `city_translations` t " \
+                        "ON t.stationID = j.departure_station " \
+                        "AND t.languageID = 1 " \
+                    "WHERE j.return_station = {}{} ".format(row, time_filter) + \
+                    "GROUP BY j.departure_station " \
+                    "ORDER BY num DESC LIMIT 5;" \
+
+            results = db.exec_query(query, [], False, False)
+
+            total = 0
+            r = {"station_popular_end":{}}
+
+            if results: 
+                for y in results: 
+                    total += 1
+                    r["station_popular_end"][total] = { "station_e": y[0], "count_e": y[1] }
+            
+            respond_to_client(socketio, r, request.sid)
+
+            # Notify that the request is handled
+            y = {"done": {}}
+            respond_to_client(socketio, y, request.sid)
+
+
         # Client wants a create a new station
         if message['type'] == 'new_station':
 
@@ -82,10 +240,7 @@ def handle_message(data):
                 results = db.exec_query(query, params, False, True)
             except Exception as err:
                 print(' [x] Error inserting journey:', str(err))
-
-                r = {"insertfail": str(err)}
-                jr = json.dumps(r)
-                socketio.emit('message', jr, to=request.sid)
+                respond_to_client(socketio, r, request.sid)
                 return
 
             # Station translations
@@ -107,13 +262,11 @@ def handle_message(data):
                 print(' [x] Error inserting journey:', str(err))
 
                 r = {"insertfail": str(err)}
-                jr = json.dumps(r)
-                socketio.emit('message', jr, to=request.sid)
+                respond_to_client(socketio, r, request.sid)
                 return
 
             r = {"inserted": '200'}
-            jr = json.dumps(r)
-            socketio.emit('message', jr, to=request.sid)
+            respond_to_client(socketio, r, request.sid)
 
 
         # Client wants a create a new journey
@@ -139,13 +292,11 @@ def handle_message(data):
                 print(' [x] Error inserting journey:', str(err))
 
                 r = {"insertfail": str(err)}
-                jr = json.dumps(r)
-                socketio.emit('message', jr, to=request.sid)
+                respond_to_client(socketio, r, request.sid)
                 return
 
             r = {"inserted": '200'}
-            jr = json.dumps(r)
-            socketio.emit('message', jr, to=request.sid)
+            respond_to_client(socketio, r, request.sid)
 
 
         # Client wants a list of all stations  
@@ -158,14 +309,13 @@ def handle_message(data):
                     "AND t.languageID=1 " \
                     "ORDER BY s.id ASC;"
             
-            print('\n{}\n'.format(query))
+            print('\n [#] Fetch - {}\n'.format(query))
             results = db.exec_query(query, [])
 
             # Notify if nothing was found
             if not results:
                 r = {"null": '404'}
-                jr = json.dumps(r)
-                socketio.emit('message', jr, to=request.sid)
+                respond_to_client(socketio, r, request.sid)
                 return
 
             i = 0
@@ -189,20 +339,18 @@ def handle_message(data):
 
                 # Echo data chunk to client
                 if i == 100:
-                    stat_data = json.dumps(x)
-                    socketio.emit('message', stat_data, to=request.sid)
+                    respond_to_client(socketio, x, request.sid)
 
                     i = 0
                     x = {"list_stations":{}}
             
             # Send the rest, if there's something left
             if i:
-                stat_data = json.dumps(x)
-                socketio.emit('message', stat_data, to=request.sid)
+                respond_to_client(socketio, x, request.sid)
 
             r = {"done": {}}
-            jr = json.dumps(r)
-            socketio.emit('message', jr, to=request.sid)
+            respond_to_client(socketio, r, request.sid)
+
             print(' [#] Done')
 
 
@@ -210,16 +358,12 @@ def handle_message(data):
         if message['type'] == 'stations':
             
             x = message
-            print("Got request for stations data")
-
             sort = x['sort']
             entries = x['limit']
             previous = x['prev']
             search = x['search']
             last_page = x['last']
             scrolled = x['scrolled']
-
-            print('typeOf entries:', type(entries), 'typeOf scrolled:', type(scrolled))
 
             # Scroll logic
             scrolled += 1
@@ -242,7 +386,7 @@ def handle_message(data):
             if not search:
                 query = "SELECT COUNT(*) AS num FROM `city_stations`;"
                     
-                print('count query:', query)
+                print(' [#] Count query:', query)
                 results = db.exec_query(query, query_params)
 
             else:
@@ -254,14 +398,13 @@ def handle_message(data):
                             search_query.replace('WHERE', 'AND')
                         )
 
-            print('count query:', query)
+            print(' [#] Count query:', query)
             results = db.exec_query(query, query_params)
             
             # Inform client how many rows were returned
             if results:
                 r = {"rows": results[0][0]}
-                jr = json.dumps(r)
-                socketio.emit('message', jr, to=request.sid)
+                respond_to_client(socketio, r, request.sid)
 
             # Sorting
             column_sort = 's.id'
@@ -307,14 +450,13 @@ def handle_message(data):
                         entries)
             
             # Fetch
-            print('\n{}\n'.format(query))
+            print('\n [#] Fetch - {}\n'.format(query))
             results = db.exec_query(query, query_params)
 
             # Notify if nothing was found
             if not results:
                 r = {"null": '404'}
-                jr = json.dumps(r)
-                socketio.emit('message', jr, to=request.sid)
+                respond_to_client(socketio, r, request.sid)
                 return
 
             i = 0
@@ -341,8 +483,7 @@ def handle_message(data):
                 if first_id == -1 and not previous: 
                     first_id = idx
                     r = {"first": first_id}
-                    jr = json.dumps(r)
-                    socketio.emit('message', jr, to=request.sid)
+                    respond_to_client(socketio, r, request.sid)
                 else: 
                     first_id = idx
 
@@ -356,27 +497,24 @@ def handle_message(data):
 
                 # Echo data chunk to client
                 if i == 100:
-                    journey_data = json.dumps(x)
-                    socketio.emit('message', journey_data, to=request.sid)
+                    respond_to_client(socketio, x, request.sid)
 
                     i = 0
                     x = {"stations":{}}
             
             # Send the rest, if there's something left
             if i:
-                journey_data = json.dumps(x)
-                socketio.emit('message', journey_data, to=request.sid)
+                respond_to_client(socketio, x, request.sid)
 
             # Client is going to a previous page, they need some data
             if previous:
                 r = {"first": first_id}
-                jr = json.dumps(r)
-                socketio.emit('message', jr, to=request.sid)
+                respond_to_client(socketio, r, request.sid)
 
             # Notify that the request is handled
             r = {"done": {}}
-            jr = json.dumps(r)
-            socketio.emit('message', jr, to=request.sid)
+            respond_to_client(socketio, r, request.sid)
+
             print(' [#] Finished query for', request.sid)
 
 
@@ -488,8 +626,7 @@ def handle_message(data):
             # Inform client how many rows were returned
             if results:
                 r = {"rows": results[0][0]}
-                jr = json.dumps(r)
-                socketio.emit('message', jr, to=request.sid)
+                respond_to_client(socketio, r, request.sid)
 
             # Sorting
             column_sort = 'j.id'
@@ -545,14 +682,13 @@ def handle_message(data):
                         "{}ORDER BY {} ASC LIMIT {};".format(queryFromLast, column_sort, (entries + int(per_page)))
             
             # Fetch
-            print('\n{}\n'.format(query))
+            print('\n [#] Fetch - {}\n'.format(query))
             results = db.exec_query(query, query_params)
 
             # Notify if nothing was found
             if not results:
                 r = {"null": '404'}
-                jr = json.dumps(r)
-                socketio.emit('message', jr, to=request.sid)
+                respond_to_client(socketio, r, request.sid)
                 return
 
             i = 0
@@ -569,25 +705,15 @@ def handle_message(data):
                 if not last_page:
                     view_total = (entries - show_entries)
                     if not ( total > view_total ): continue
-                """if not last_page:
-                    if not ( total > view_total ): 
-                        print('return 1 total', total, view_total)
-                        continue
-                else: 
-                    if ( total > view_total and view_total > 0 or total > show_entries ): 
-                        if stopscroll:
-                            print('return 2 total', total, view_total, show_entries)
-                            continue"""
 
                 i += 1
                 idx = row[0]
 
                 # Send client first rowID since they need it on some pagination functions
-                if first_id == -1 : #and not previous: 
+                if first_id == -1 :
                     first_id = idx
                     r = {"first": first_id}
-                    jr = json.dumps(r)
-                    socketio.emit('message', jr, to=request.sid)
+                    respond_to_client(socketio, r, request.sid)
                 else: 
                     first_id = idx
 
@@ -609,27 +735,23 @@ def handle_message(data):
 
                 # Echo data chunk to client
                 if i == 100:
-                    journey_data = json.dumps(x)
-                    socketio.emit('message', journey_data, to=request.sid)
+                    respond_to_client(socketio, x, request.sid)
 
                     i = 0
                     x = {"journeys":{}}
 
             # Send the rest, if there's something left
             if i:
-                journey_data = json.dumps(x)
-                socketio.emit('message', journey_data, to=request.sid)
+                respond_to_client(socketio, x, request.sid)
 
             # Client is going to a previous page, they need some data
             if previous:
                 r = {"first": first_id}
-                jr = json.dumps(r)
-                socketio.emit('message', jr, to=request.sid)
+                respond_to_client(socketio, r, request.sid)
 
             # Notify that the request is handled
             r = {"done": {}}
-            jr = json.dumps(r)
-            socketio.emit('message', jr, to=request.sid)
+            respond_to_client(socketio, r, request.sid)
             print(' [#] Finished query for', request.sid)
 
 

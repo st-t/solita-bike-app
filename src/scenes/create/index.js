@@ -58,6 +58,7 @@ export default class index extends Component
             dropdownValues: [],
             stations_coords: [ [], [] ], 
             stations_data: [ [], [], [], [] ], 
+            refreshStations: false,
 
             // Journey data
             serverMessage: false, err_return: false, mapPreview: true,
@@ -93,8 +94,10 @@ export default class index extends Component
     componentDidMount() 
     {
         this.setState({stationsLoaded: false});
-        this.stationsRequest();
         this.props.changeProps({isLoaded: true});
+        
+        // Get stations data 
+        this.stationsRequest();
 
         // Listen the server for messages
         socket.on('message', (msg) => 
@@ -121,22 +124,30 @@ export default class index extends Component
                 if( obj.hasOwnProperty('done') )
                 {
                     this.setState({stationsLoaded: true});
-
+                    this.props.changeProps({isLoaded: true});
                 }
 
                 // We have successfully inserted a new journey
                 if( obj.hasOwnProperty('inserted') )
                 {
+                    this.props.changeProps({isLoaded: true});
+
                     this.setState({
                         err_return: false,
                         serverMessage: true,
                         messageFromServer: 'Successfully inserted new data!'
                     });
+
+                    // Client inserted a new station. Refresh stations array
+                    if(this.state.refreshStations)
+                        this.setState({refreshStations: false}, this.updateStationsList );
                 }
 
                 // There was an error creating a journey
                 if( obj.hasOwnProperty('insertfail') )
                 {
+                    this.props.changeProps({isLoaded: true});
+
                     this.setState({
                         err_return: true,
                         serverMessage: true,
@@ -187,9 +198,20 @@ export default class index extends Component
     // Sends a request to server
     serverRequest()
     {
+        // Scroll user to top when we're loading the page
+        window.scrollTo(0, 0);
+        this.props.changeProps({isLoaded: false});
+
         // Change the json to a string and send the request
         const jsonRequest = JSON.stringify(this.state.filters); 
         socket.send(jsonRequest);
+    }
+
+    // Updates stations list 
+    updateStationsList()
+    {
+        this.setState({stationsLoaded: false});
+        this.stationsRequest();
     }
 
     // Client is setting journey date
@@ -582,8 +604,13 @@ export default class index extends Component
             operator: ' '
         };
 
-        // Sent the data
-        this.setState( {filters: obj}, this.serverRequest );
+        // Send the data
+        this.setState( {
+            filters: obj,
+            stations_data: [ [], [], [], [] ],
+            refreshStations: true
+
+        }, this.serverRequest );
 
         // Data is sent, reset the page
         this.setState({

@@ -42,10 +42,11 @@ export default class index extends Component
             // Data for each pages
             currentPage: 1, pageEntries: 20, expandJourney: 0, totalRows: 0, firstRow: 0,
             displayFilters: false, expandFilters: false, calledLast: false, scrolledPage: 0,
-            wentToLast: false, actualScrolled: 0, linkStations: false,
+            wentToLast: false, actualScrolled: 0, linkStations: false, stopScroll: false,
 
             // Filters 
             filters: {},
+            station: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             needApply: false, displayNoResults: false,
             goToLast: false, goingToLast: false,
             lastApplied: [], curApplied: [], 
@@ -110,7 +111,8 @@ export default class index extends Component
         
         this.setState({
             pageEntries: resultsForPage,
-            fetchEntriesAmount: (pagesToLoad * resultsForPage)
+            fetchEntriesAmount: (pagesToLoad * resultsForPage),
+            stopScroll: false,
         });
 
         // First reset our page

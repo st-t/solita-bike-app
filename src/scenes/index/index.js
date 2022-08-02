@@ -259,7 +259,8 @@ export default class index extends Component
             pageEntries: resultsForPage,
             fetchEntriesAmount: (pagesToLoad * resultsForPage),
             needApply: false,
-            lastApplied: curApplied
+            lastApplied: curApplied,
+            stopScroll: false,
         });
 
         // First reset our page
