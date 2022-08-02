@@ -8,7 +8,7 @@ import pymysql
 
 
 
-def exec_query(query, args=[], batch=False):
+def exec_query(query, args=[], batch=False, get_insert=False):
 
     """ 
     exec_query()
@@ -47,9 +47,12 @@ def exec_query(query, args=[], batch=False):
 
     MySQLInit.commit()
 
-    # Close the handle and return results
     try: results = SQL_Query.fetchall()
     except: results = 0
+
+    # Returns last inserted rowid
+    if get_insert: results = SQL_Query.lastrowid
+
     SQL_Query.close()
     return results
 
@@ -100,14 +103,15 @@ def scrape_stations(console_log=False):
     except: pass
 
     i = 0
+    station_names = []
     file = 'datasets/Helsingin_ja_Espoon_kaupunkipyöräasemat_avoin.csv'
 
     # Open with codecs to get special characters correct
+    # Insert stations first since we have auto_increment 
     with codecs.open(file, encoding='utf') as lines:
 
         # Mass query data
         stations_batch = []
-        translations_batch = []
 
         for line in lines:
             
@@ -140,14 +144,58 @@ def scrape_stations(console_log=False):
                         '\n x: {}'.format(data[11]),
                         '\n y: {}'.format(data[12]))
 
+                    station_names.append(data[2])
+
                     # Append data for batch query
                     stations_batch.append( [
-                        data[1], data[9], data[11], data[12]
+                        data[9], data[11], data[12]
                     ] )
 
-                    # Loop the language data from SQL
-                    # We need the language ID for this query 
-                    # (`stationID`, `languageID`, `name`, `address`, `city`) 
+            i += 1
+            if i > 200:
+                insert_station_batch(stations_batch)
+
+                i = 0
+                stations_batch = []
+
+        # File ended, insert rest of the rows if we didn't do that already
+        if not i == 0: insert_station_batch(stations_batch)
+
+    # Fetch ids to insert translations, so it matches the increment 
+    query = "SELECT id FROM `city_stations` ORDER BY id ASC;"
+    query_res = exec_query(query, [])
+    station_ids = []
+
+    for x in query_res: station_ids.append(x[0])
+
+    # Do translations next 
+    with codecs.open(file, encoding='utf') as lines:
+
+        # Mass query data
+        i = 0
+        translations_batch = []
+
+        for line in lines:
+            
+            # Fix some characters and split the data into an array
+            line = line.rstrip()
+            data = line.split(',')
+
+            # If we have an usable array and skip first line
+            if len(data) > 12:
+                if not 'ID' in data[1]:
+                    
+                    # Fixes formatting longer names with commas such as "Aalto-yliopisto (M), Tietot"
+                    for x in range(len(data)):
+                        if x >= len(data): break
+                        if data[x].startswith('"'):
+                            data[x] = data[x] + data[x + 1]
+                            del data[x + 1]
+
+                    # Find correct station ID
+                    station_id = station_names.index(data[2])
+                    data[1] = station_ids[station_id]
+
                     for x in languages:
                         
                         # [0] == id
@@ -166,21 +214,41 @@ def scrape_stations(console_log=False):
                             ] )
 
             i += 1
-
-            # Insert in batch of 200
-            if i > 200: 
-                insert_station_batch(stations_batch, translations_batch)
-
+            if i > 200:
+                insert_translations_batch(translations_batch)
                 i = 0
-                stations_batch = []
                 translations_batch = []
 
         # File ended, insert rest of the rows if we didn't do that already
-        if not i == 0: insert_station_batch(stations_batch, translations_batch)
+        if not i == 0: insert_translations_batch(translations_batch)
 
 
 
-def insert_station_batch(stations_batch, translations_batch):
+def insert_translations_batch(translations_batch):
+
+    """ 
+    insert_translations_batch()
+
+    - parameters : (
+            [array] array of query arguments
+            [array] array of query arguments
+        )
+
+    - description : executes a batch query to database, called from scrape_stations()
+    - return : none
+    """
+
+    # Insert station info
+    query = "INSERT INTO `city_translations` " \
+            "(`stationID`, `languageID`, `name`, `address`, `city`) " \
+            "VALUES( %s, %s, %s, %s, %s )"
+
+    exec_query(query, translations_batch, True)
+    print(' [#] Translation batch query successful ')
+
+
+
+def insert_station_batch(stations_batch):
 
     """ 
     insert_station_batch()
@@ -195,18 +263,11 @@ def insert_station_batch(stations_batch, translations_batch):
     """
 
     # Insert stations
-    query = "INSERT INTO `city_stations` (`id`, `operator`, `x`, `y`) " \
-            "VALUES( %s, %s, %s, %s )"
+    query = "INSERT INTO `city_stations` (`operator`, `x`, `y`) " \
+            "VALUES( %s, %s, %s )"
 
     exec_query(query, stations_batch, True)
-
-    # Insert station info
-    query = "INSERT INTO `city_translations` " \
-            "(`stationID`, `languageID`, `name`, `address`, `city`) " \
-            "VALUES( %s, %s, %s, %s, %s )"
-
-    exec_query(query, translations_batch, True)
-    print(' [#] Batch query successful')
+    print(' [#] Stations batch query successful ')
 
 
 
@@ -223,10 +284,13 @@ def scrape_journeys(console_log=False):
     reads journey dataset(s), filters and inserts data to database
     this function will take a few minutes to execute (around 3 million rows & 3 files)
 
+    - notes:
     associated files (hardcoded since reading custom datasets goes beyond the purpose of this app) :
     'server/datasets/datasets/2021-05.csv'
     'server/datasets/datasets/2021-06.csv'
     'server/datasets/datasets/2021-07.csv'
+
+    datasets must fit in your memory to execute this function
 
     - return : none
     """
@@ -238,12 +302,14 @@ def scrape_journeys(console_log=False):
     except: pass
 
     # Fetch stations array as we need the IDs for validating
-    query = "SELECT id FROM `city_stations`;"
+    query = "SELECT s.id, t.name FROM `city_stations` s LEFT JOIN `city_translations` t ON s.id=t.stationID WHERE t.languageID=1;"
     query_res = exec_query(query, [])
     station_ids = []
+    station_names = []
 
     for x in query_res:
         station_ids.append(x[0])
+        station_names.append(x[1])
 
     i = 1
     queries = 0
@@ -261,12 +327,13 @@ def scrape_journeys(console_log=False):
         print(' [#] Processing file', file, '...')
 
         # Open with codecs to get special characters correct
+        # Also in reversed, since newest journeys start from the bottom
         with codecs.open(file, encoding='utf') as lines:
             
             # Mass query data
             journeys_batch = []
 
-            for line in lines:
+            for line in reversed(list(lines)):
                 
                 # Fix some characters and split the data into an array
                 line = line.rstrip()
@@ -286,8 +353,11 @@ def scrape_journeys(console_log=False):
 
                             if data[x].startswith('"'):
                                 if len(data) == 8: 
-                                    data[x] = data[x].replace('"', '')
-                                    data[x+2] = data[x+2].replace('"', '')
+                                    # data[x] = data[x].replace('"', '')
+                                    # data[x+2] = data[x+2].replace('"', '')
+                                    data[x] = data[x] + data[x + 2]
+                                    print('new data:', data[x])
+                                    del data[x + 2]
                                 else:
                                     data[x] = data[x] + data[x + 1]
                                     del data[x + 1]
@@ -302,6 +372,32 @@ def scrape_journeys(console_log=False):
                             '\n Return Station: {}'.format(data[5]),
                             '\n Distance: {}'.format(data[6]),
                             '\n Duration: {}'.format(data[7]))
+
+                        # Fix spaces 
+                        data[3] = data[3].replace('\xa0', ' ')
+                        data[5] = data[5].replace('\xa0', ' ')
+
+                        # Fix station IDs, since we're using auto_increment 
+                        try:
+                            departure_id = station_names.index(data[3])
+                            data[2]  = station_ids[departure_id]
+                        except: 
+                            # Station name is incorrect (datasets are bad), ignore it
+                            # These stations don't exist in stations datasets: 
+                            # Aalto-yliopisto (M) Korkeakouluaukio
+                            # Outotec
+                            # "Aalto-yliopisto (M) Tietotie"
+                            # Mestarinkatu
+                            # Lumivaarantie
+                            # Haukilahdensolmu
+                            # Maybe more... 
+                            continue
+                        
+                        try: 
+                            return_id = station_names.index(data[5])
+                            data[4] = station_ids[return_id]
+                        except: continue
+
                         
                         # Filter journeys we don't want to import 
                         # Distance or duration is too low
@@ -355,7 +451,6 @@ def insert_journey_batch(journeys_batch, queries):
     - return : none
     """
 
-    # Insert stations
     query = "INSERT INTO `city_journeys` " \
             "(`departure`, `return`, `departure_station`, " \
             "`return_station`, `distance`, `duration`) " \
@@ -380,7 +475,7 @@ def init_tables():
     # Index x/y if we need to make searches on coordinate areas
     query = "CREATE TABLE IF NOT EXISTS `city_stations` " \
             "( " \
-                "`id` INT(1) NOT NULL UNIQUE, " \
+                "`id` INT(1) NOT NULL AUTO_INCREMENT, " \
                 "`operator` VARCHAR(64), " \
                 "`x` FLOAT(12), " \
                 "`y` FLOAT(12), " \
@@ -447,4 +542,5 @@ def init_tables():
             "COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB;"
 
     exec_query(query, [])
+
 

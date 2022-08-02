@@ -31,6 +31,7 @@ export default class NewList extends Component {
             test: '200 OK',
             pressed: 0,
             canLoad: false,
+            mapPreview: false,
         }
 
         // Handle pagination clicks
@@ -367,6 +368,7 @@ export default class NewList extends Component {
                                         coordinates={column_data} 
                                         coord_index={(idx+index)}
                                         isJourney={linkStations}
+                                        changeProps = {this.props.changeProps} 
                                         />
                                 }
                             </div>

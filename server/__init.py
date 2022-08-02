@@ -3,6 +3,7 @@
     Backend core
 """
 
+from logging import exception
 import __sql as db
 
 import json
@@ -63,6 +64,146 @@ def handle_message(data):
     if starts(data, '{'):
 
         message = json.loads(data)
+
+        # Client wants a create a new station
+        if message['type'] == 'new_station':
+
+            # Station id & coords
+            query = "INSERT INTO `city_stations` (`operator`, `x`, `y`) " \
+                    "VALUES( %s, %s, %s )"
+
+            params = [ 
+                message['operator'],
+                message['long'],
+                message['lat']
+            ]
+
+            try:
+                results = db.exec_query(query, params, False, True)
+            except Exception as err:
+                print(' [x] Error inserting journey:', str(err))
+
+                r = {"insertfail": str(err)}
+                jr = json.dumps(r)
+                socketio.emit('message', jr, to=request.sid)
+                return
+
+            # Station translations
+            query = "INSERT INTO `city_translations` " \
+                    "(`stationID`, `languageID`, `name`, `address`, `city`) " \
+                    "VALUES( %s, %s, %s, %s, %s )"
+
+            params = [ 
+                results,
+                '1',
+                message['name'],
+                message['address'],
+                message['city']
+            ]
+
+            try:
+                results = db.exec_query(query, params)
+            except Exception as err:
+                print(' [x] Error inserting journey:', str(err))
+
+                r = {"insertfail": str(err)}
+                jr = json.dumps(r)
+                socketio.emit('message', jr, to=request.sid)
+                return
+
+            r = {"inserted": '200'}
+            jr = json.dumps(r)
+            socketio.emit('message', jr, to=request.sid)
+
+
+        # Client wants a create a new journey
+        if message['type'] == 'new_journey':
+
+            query = "INSERT INTO `city_journeys` " \
+                    "(`departure`, `return`, `departure_station`, " \
+                    "`return_station`, `distance`, `duration`) " \
+                    "VALUES( %s, %s, %s, %s, %s, %s )"
+            
+            params = [ 
+                message['dateOfDeparture'],
+                message['dateOfReturn'],
+                message['departure_station'],
+                message['return_station'],
+                message['distance'],
+                message['duration']
+            ]
+
+            try:
+                results = db.exec_query(query, params)
+            except Exception as err:
+                print(' [x] Error inserting journey:', str(err))
+
+                r = {"insertfail": str(err)}
+                jr = json.dumps(r)
+                socketio.emit('message', jr, to=request.sid)
+                return
+
+            r = {"inserted": '200'}
+            jr = json.dumps(r)
+            socketio.emit('message', jr, to=request.sid)
+
+
+        # Client wants a list of all stations  
+        if message['type'] == 'list_stations':
+
+            query = "SELECT t.name, s.id, s.x, s.y " \
+                    "FROM `city_stations` s " \
+                    "LEFT JOIN `city_translations` t " \
+                    "ON t.stationID = s.id " \
+                    "AND t.languageID=1 " \
+                    "ORDER BY s.id ASC;"
+            
+            print('\n{}\n'.format(query))
+            results = db.exec_query(query, [])
+
+            # Notify if nothing was found
+            if not results:
+                r = {"null": '404'}
+                jr = json.dumps(r)
+                socketio.emit('message', jr, to=request.sid)
+                return
+
+            i = 0
+            total = 0
+            x = {"list_stations":{}}
+
+            # Loop all results
+            for row in results:
+                
+                i += 1
+                total += 1
+                idx = row[0]
+
+                # Append data into json array
+                x["list_stations"][total] = {
+                    "id": idx,
+                    "name": row[1],
+                    "x": row[2],
+                    "y": row[3]
+                }
+
+                # Echo data chunk to client
+                if i == 100:
+                    stat_data = json.dumps(x)
+                    socketio.emit('message', stat_data, to=request.sid)
+
+                    i = 0
+                    x = {"list_stations":{}}
+            
+            # Send the rest, if there's something left
+            if i:
+                stat_data = json.dumps(x)
+                socketio.emit('message', stat_data, to=request.sid)
+
+            r = {"done": {}}
+            jr = json.dumps(r)
+            socketio.emit('message', jr, to=request.sid)
+            print(' [#] Done')
 
         # Client wants stations data 
         if message['type'] == 'stations':
@@ -294,10 +435,10 @@ def handle_message(data):
             search_query = ''
 
             if search:
-                query_params = [f"{search}%", f"{search}%", f"%{search}", f"%{search}"]
+                query_params = [f"{search}%", f"%{search}"]
                 if not has_seconds and not has_meters:
-                    search_query = " WHERE (t.name LIKE %s OR tr.name LIKE %s OR t.name LIKE %s OR tr.name LIKE %s) "
-                else: search_query = " AND (t.name LIKE %s OR tr.name LIKE %s OR t.name LIKE %s OR tr.name LIKE %s)  "
+                    search_query = " WHERE (t.name LIKE %s OR t.name LIKE %s) "
+                else: search_query = " AND (t.name LIKE %s OR t.name LIKE %s) "
 
             # Send count to client since they need it 
             count_format = query_dist.replace('j.', '')

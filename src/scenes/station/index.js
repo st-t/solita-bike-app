@@ -64,6 +64,8 @@ class Station extends Component
             lastApplied: [], curApplied: [], 
             toDate: null, fromDate: null,
             linkStations: false,
+            isCreate: false,
+            mapPreview: false,
         };
 
         this.changeProps = this.changeProps.bind(this);
@@ -204,14 +206,14 @@ class Station extends Component
 
     render() 
     {
-        const { expandFilters, needApply, toDate, fromDate, linkStations } = this.state;
+        const { expandFilters, needApply, toDate, fromDate, linkStations, isCreate } = this.state;
         const { stationID } = this.props.params;
 
         return (
             <div className={anims.fade_class}>
                 <div className={styles.container}>
-
                     <div className={styles.station_header}>
+
                         <p>#{stationID} Töölöntulli</p>
                         <p className={styles.station_address}>Hanasaarenranta 1</p>
 
@@ -220,6 +222,8 @@ class Station extends Component
                             < GoogleMaps 
                                 data = {this.state} 
                                 isJourney={linkStations}
+                                isCreate={isCreate}
+                                changeProps = {this.changeProps} 
                             />
 
                         </div>
@@ -228,7 +232,7 @@ class Station extends Component
                     <div className={styles.station_stats}>
 
                         <p className={styles.station_stats_title}>Station statistics</p>
-
+                        
                         {/* When user clicks cogwheel => expand it <DateFormat />*/}
                         <div>
                             <FontAwesomeIcon 
@@ -256,7 +260,9 @@ class Station extends Component
                                                 value="value1"/>
                                                 <label htmlFor="checkbox-1">Filter by time</label> 
                                             </li>
+
                                             <li></li>
+
                                             <li>
                                                 <button onClick={() => this.applyFilters()} className={`${needApply === true ? styles.f_apply : styles.f_applyDark} `}>Apply</button>
                                             </li>
@@ -267,26 +273,19 @@ class Station extends Component
                                             <li>From:</li>
                                             <li>{fromDate}</li>
                                         </ul>
+
                                         <ul>
                                             <li>To:</li>
                                             <li>{toDate}</li>
                                         </ul>
-                                        
+
                                         <div onClick={() => this.dateClick()}  className={styles.datepick}>
                                             <DateFormat />
                                         </div>
-
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
-
-                        
-
-                        
-
-
 
                         <div className={styles.stats_wrap}>
 
@@ -310,7 +309,6 @@ class Station extends Component
                                 <li><p>5.23km</p></li>
                             </ul>
 
-
                             <p className={styles.list_head}>Most popular return stations starting here:</p>
                             <ol>
                                 <li>Keilalahti</li>
@@ -330,7 +328,6 @@ class Station extends Component
                             </ol>
                         </div>
                     </div>
-
                 </div>
             </div>
         );
