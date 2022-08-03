@@ -31,7 +31,7 @@ export default class index extends Component
             column_data: [ [], [], [], [] ],
 
             // Station ids
-            station_ids: [ [] ],
+            station_ids: [ [], [] ],
 
             // How much entries to fetch
             fetchEntriesAmount: 100,
@@ -50,16 +50,15 @@ export default class index extends Component
             needApply: false, displayNoResults: false,
             goToLast: false, goingToLast: false,
             lastApplied: [], curApplied: [], 
-            pagesToLoad: '5', resultsForPage: '20', search: ''
+            pagesToLoad: '5', resultsForPage: '20', search: '',
+
+            sqlConnected: false,
         };
 
         this.changeProps = this.changeProps.bind(this);
-
-        //this.sortCallback = this.sortCallback.bind(this);
         this.applyFilters = this.applyFilters.bind(this);
         this.changeLoading = this.changeLoading.bind(this);
         this.searchCallback = this.searchCallback.bind(this);
-        //this.createDropdown = this.createDropdown.bind(this);
         this.constructRequest = this.constructRequest.bind(this);
     }
 
@@ -86,8 +85,60 @@ export default class index extends Component
             fetchEntriesAmount: 100
         });
 
-        // Start by fetching stations from database
-        this.formatJsonRequest();
+        this.checkServer();
+
+        // Listen the server for messages
+        socket.on('message', async (msg) => 
+        {
+            this.setState({data:msg})
+
+            // Message from socketio 
+            let json_response = this.state.data; 
+
+            // Check if we got some data and not an empty object
+            if( String( typeof(json_response) ) === 'string' )
+            {
+                // Parse the json string 
+                const obj = JSON.parse(json_response);
+                
+                // Check if we are connected 
+                if( obj.hasOwnProperty('check') )
+                {
+                    if(obj.check.connected === 'True')
+                    {
+                        this.setState({sqlConnected: true});
+
+                        // Start by fetching stations from database
+                        this.formatJsonRequest();
+                    }
+                }
+
+                // There was no results
+                if( obj.hasOwnProperty('null') )
+                {
+                    this.props.changeProps({isLoaded: true});
+                        
+                    
+                    if(this.state.goingToLast) 
+                        this.setState( {goToLast: true, goingToLast: false} );
+                    else 
+                    {
+                        this.setState({
+                            search: '',
+                            displayNoResults: true,
+                            displayFilters: true
+                        });
+                    } 
+                }
+            }
+        });
+    }
+
+    // Check sql status 
+    checkServer()
+    {
+        const obj = { type: 'check' };
+        this.setState( {filters: obj}, this.serverRequest );
     }
 
     // Constructs a request for server
@@ -100,7 +151,8 @@ export default class index extends Component
     searchCallback(search)
     {
         this.setState({ 
-            search: search
+            search: search,
+            displayNoResults: false
         }, this.applyFilters);
     }
 
@@ -170,17 +222,20 @@ export default class index extends Component
         // Change the json to a string and send the request
         const jsonRequest = JSON.stringify(this.state.filters); 
         socket.send(jsonRequest);
-
-        // Close cogwheel
-        // this.setState({goToLast: false, expandFilters: false});
     }
 
     render() {
+        const {displayNoResults} = this.state; 
+
         return (
             <div className={anims.fade_class}>
-
                 <div className={styles.container}>
                     
+                    {/* Search has failed */}
+                    <div className={`${displayNoResults === true ? styles.no_results : styles.hide_res} `}>
+                        No results. Check your search filters.
+                    </div>
+
                     <NewList 
                     data = {this.state} 
                     changeProps = {this.changeProps} 
@@ -190,7 +245,6 @@ export default class index extends Component
                     searchCallback = {this.searchCallback} />
 
                 </div>
-
             </div>
         );
     }

@@ -196,3 +196,14 @@
     padding: 15px;
     border-radius: 20px;
 }
+
+@media screen and (max-width:800px) {
+    .settings_header, .settings_footer {
+        line-height: 20px;
+    }
+    .settings_footer {
+        padding-top: 100px;
+    }
+
+    
+}

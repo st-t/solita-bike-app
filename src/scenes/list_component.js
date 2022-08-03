@@ -32,8 +32,8 @@ export default class NewList extends Component {
             test: '200 OK',
             pressed: 0,
             canLoad: false,
-            mapPreview: false,
             canScroll: false,
+            mapPreview: false,
         }
 
         // Handle pagination clicks
@@ -278,7 +278,7 @@ export default class NewList extends Component {
     {
         var hours   = Math.floor(seconds / 3600);
         var minutes = Math.floor( ( seconds - (hours * 3600) ) / 60 );
-        var seconds = seconds - (hours * 3600) - (minutes * 60);
+        seconds = seconds - (hours * 3600) - (minutes * 60);
 
         if(hours) hours = hours + 'h ';
         else hours = ''; 
@@ -295,6 +295,8 @@ export default class NewList extends Component {
     // Clients wants to sort by column
     handleSort(el, state_var, column)
     {
+        if(!this.props.data.sqlConnected) return; 
+
         var arr = [];
         var had_res = false;
         const { columns } = this.props.data;
@@ -390,8 +392,7 @@ export default class NewList extends Component {
             currentPage, 
             pageEntries, 
             expandJourney,
-            linkStations,
-            fetchEntriesAmount
+            linkStations
 
         } = this.props.data;
 
@@ -455,6 +456,10 @@ export default class NewList extends Component {
         // Column data itself
         for (let i = 1; i < columns.length; i++)
             titles.push( column_data[i][index] );
+        
+        const linkOfStation = column_data[0][index];
+        const linkOfReturn = station_ids[1][index];
+        const linkOfDeparture = station_ids[0][index];
 
         // We need column headers for mobile version (it displays header title on each column)
         // This will be hidden on the normal screen width 
@@ -476,10 +481,15 @@ export default class NewList extends Component {
                 // station_ids[0] = departure
                 // station_ids[1] = return
                 // [index] being list column index
-                if(hIndex === 0 || hIndex === 1)
+                if(hIndex === 1)
                 {
                     renderLink = true;  
-                    stationLink = '/station/' + station_ids[hIndex][index];
+                    stationLink = '/station/' + linkOfReturn;
+                } 
+                if(hIndex === 0)
+                {
+                    renderLink = true;  
+                    stationLink = '/station/' + linkOfDeparture;
                 } 
             }
             else 
@@ -488,7 +498,7 @@ export default class NewList extends Component {
                 if(hIndex === 0) 
                 {
                     renderLink = true;
-                    stationLink = '/station/' + station_ids[hIndex][index];
+                    stationLink = '/station/' + linkOfStation;
                 }
             }
 
@@ -497,7 +507,7 @@ export default class NewList extends Component {
                     {
                         renderLink === true 
                         ? <Link className={styles.station_link} to={stationLink}>{string}<p>{headers[hIndex]}</p></Link> 
-                        : <a>{string}<p>{headers[hIndex]}</p></a>
+                        : <>{string}<p>{headers[hIndex]}</p></>
                     }
                 </li>
             );
@@ -558,15 +568,18 @@ export default class NewList extends Component {
         if(scrolledPage === 0 || !siteLoaded) return;
 
         this.resetListData();
+        
+        var scroll;
+        var var_scrolled;
         var setFetch = (firstRow);
         this.props.changeProps({goingToLast: false});
 
         // Client wants to see previous page
         if(!last)
         {
-            if(wentToLast) var scroll = actualScrolled+1;
-            else var scroll = actualScrolled-1;
-            var var_scrolled = scrolledPage-1;
+            if(wentToLast) scroll = actualScrolled+1;
+            else scroll = actualScrolled-1;
+            var_scrolled = scrolledPage-1;
 
             this.props.changeLoading(false);
             this.props.changeProps({calledLast: false});
@@ -617,27 +630,29 @@ export default class NewList extends Component {
         this.resetListData();
         this.props.changeProps({goingToLast: true});
 
+        var scroll;
+        var var_scrolled;
         var toLast = wentToLast;
         var endResults = false;
         
         // Client scrolled to the last pages
         if(wentToLast)
         {
-            var scroll = actualScrolled-1;
-            if( !(scroll < 0) ) var var_scrolled = scrolledPage+1;
+            scroll = actualScrolled-1;
+            if( !(scroll < 0) ) var_scrolled = scrolledPage+1;
             else 
             {
                 // Client wants to go to next page but are on the very last page 
                 scroll = 0;
                 endResults = true;
-                var var_scrolled = scrolledPage;
+                var_scrolled = scrolledPage;
                 this.props.changeProps({calledLast: true});
             }
         }
         else 
         {
-            var scroll = actualScrolled+1;
-            var var_scrolled = scrolledPage+1;
+            scroll = actualScrolled+1;
+            var_scrolled = scrolledPage+1;
         }
 
         // Client wants to see next page 
@@ -652,9 +667,9 @@ export default class NewList extends Component {
         // Client wants to see the very last page 
         else 
         {
+            scroll = 0;
             toLast = true;
-            var scroll = 0;
-            var var_scrolled = 0;
+            var_scrolled = 0;
             this.props.changeLoading(false);
             this.props.changeProps({calledLast: true});
             this.props.changeProps({wentToLast: true});
@@ -757,14 +772,16 @@ export default class NewList extends Component {
     // Clear list data
     resetListData()
     {
-        const arraylist = [];
-        const { column_data } = this.props.data;
-        for (let i = 0; i < column_data.length; i++) arraylist.push( [] );
+        const arr1 = [], arr2 = [];
+        const { column_data, station_ids } = this.props.data;
+        for (let i = 0; i < column_data.length; i++) arr1.push( [] );
+        for (let i = 0; i < station_ids.length; i++) arr2.push( [] );
         
         this.props.changeProps({currentPage: 1});
         this.props.changeProps({displayFilters: false});
         this.props.changeProps({displayNoResults: false});
-        this.props.changeProps({column_data: arraylist});
+        this.props.changeProps({column_data: arr1});
+        this.props.changeProps({station_ids: arr2});
     }
 
     // Client is writing on search input

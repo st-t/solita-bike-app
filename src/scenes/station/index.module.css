@@ -15,6 +15,18 @@
     padding-top: 20px;
 }
 
+.station_link
+{   
+    text-decoration: none;
+    color: white;
+}
+
+.station_link:hover
+{   
+    text-decoration: none;
+    color: rgb(83, 224, 90);
+}
+
 .station_header {
     position: relative;
     margin: auto;

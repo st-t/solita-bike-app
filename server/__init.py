@@ -63,7 +63,6 @@ def handle_message(data):
         
         print(' [#] Client loaded:', request.sid)
 
-        # Respond
         r = {"connection": '200 OK'}
         json_response = db.json.dumps(r)
         socketio.emit('message', json_response, to=request.sid)
@@ -78,11 +77,11 @@ def handle_message(data):
             db.run_import(socketio, request.sid)
 
 
-        # Client landed on settings page
+        # Send connection status 
         if message['type'] == 'check':
 
             r = {"check":{}}
-            
+
             r["check"] = {
                 "check": str(db.importing),
                 "connected": str(db.connected)
@@ -124,8 +123,6 @@ def handle_message(data):
             # Lets make sure client isn't doing an sql injection by modifying the link
             try: row = int(row)
             except ValueError: 
-                # Send a message here 
-                row = 0
                 return 
 
             # Station info 
@@ -207,7 +204,7 @@ def handle_message(data):
             if has_date: time_filter = " AND {} BETWEEN '{}' AND '{}' ".format(time_column, from_date, to_date)
 
             # Most popular return stations starting here 
-            query = "SELECT t.name, COUNT(j.id) AS num " \
+            query = "SELECT t.name, COUNT(j.id) AS num, t.stationID " \
                         "FROM `city_journeys` j " \
                         "LEFT JOIN `city_translations` t " \
                         "ON t.stationID = j.return_station " \
@@ -224,7 +221,7 @@ def handle_message(data):
             if results: 
                 for y in results: 
                     total += 1
-                    r["station_popular_start"][total] = { "station_s": y[0], "count_s": y[1] }
+                    r["station_popular_start"][total] = { "station_s": y[0], "count_s": y[1], "index": y[2] }
             
             respond_to_client(socketio, r, request.sid)
             
@@ -234,7 +231,7 @@ def handle_message(data):
             if has_date: time_filter = " AND {} BETWEEN '{}' AND '{}' ".format(time_column, from_date, to_date)
 
             # Most popular departure stations ending here 
-            query = "SELECT t.name, COUNT(j.id) AS num " \
+            query = "SELECT t.name, COUNT(j.id) AS num, t.stationID " \
                         "FROM `city_journeys` j " \
                         "LEFT JOIN `city_translations` t " \
                         "ON t.stationID = j.departure_station " \
@@ -251,7 +248,7 @@ def handle_message(data):
             if results: 
                 for y in results: 
                     total += 1
-                    r["station_popular_end"][total] = { "station_e": y[0], "count_e": y[1] }
+                    r["station_popular_end"][total] = { "station_e": y[0], "count_e": y[1], "index": y[2] }
             
             respond_to_client(socketio, r, request.sid)
 
@@ -391,7 +388,7 @@ def handle_message(data):
             print(' [#] Done')
 
 
-        # Client wants stations data 
+        # Client wants stations data (list comp)
         if message['type'] == 'stations':
             
             x = message
@@ -402,11 +399,10 @@ def handle_message(data):
             last_page = x['last']
             scrolled = x['scrolled']
 
-            # Scroll logic
+            # Some scroll logic
             scrolled += 1
             show_entries = entries
-            if scrolled: entries = (entries * scrolled)
-            else: entries = 0
+            entries = (entries * scrolled)
             if(entries == 0): entries = show_entries
 
             # Res order
@@ -466,7 +462,7 @@ def handle_message(data):
                 
                 # Client wants to see the last page which becomes a bit funky 
                 # fix count something stuff
-                query = "SELECT s.id, t.name, s.x, s.y " \
+                query = "SELECT * " \
                         "FROM ( " \
                             "SELECT s.id, t.name, s.x, s.y " \
                             "FROM `city_stations` s " \
@@ -478,13 +474,7 @@ def handle_message(data):
                             column_sort, 
                             entries) + \
                         ") s " \
-                        "LEFT JOIN `city_translations` t " \
-                        "ON s.id = t.stationID {}" \
-                        "{}ORDER BY {} ASC LIMIT {} ".format(
-                        lang,
-                        search_query,
-                        column_sort, 
-                        entries)
+                        "ORDER BY {} ASC;".format(column_sort)
             
             # Fetch
             print('\n [#] Fetch - {}\n'.format(query))
@@ -505,13 +495,14 @@ def handle_message(data):
             for row in results:
 
                 total += 1
-                view_total = (entries - show_entries)
 
                 # Logic for pagescrolling
                 if not last_page:
-                    if not ( total > view_total ): continue
+                    if(scrolled > 1) and (total <= (entries - show_entries)): 
+                        continue
                 else: 
-                    if ( total > view_total and view_total > 0 or total > show_entries ): continue
+                    if(scrolled > 1) and (total > (entries - ((show_entries * scrolled) - show_entries ))): 
+                        continue
 
                 i += 1
                 idx = row[0]
@@ -555,7 +546,7 @@ def handle_message(data):
             print(' [#] Finished query for', request.sid)
 
 
-        # Client wants journey data 
+        # Client wants journey data (list comp)
         if message['type'] == 'journeys':
             
             x = message
@@ -564,8 +555,6 @@ def handle_message(data):
             previous = x['prev']
             search = x['search']
             last_page = x['last']
-            per_page = x['perPage']
-            last_id = x['lastID']
             scrolled = x['scrolled']
             has_meters = x['distance']['metersFilter']
             has_seconds = x['duration']['secondsFilter']
@@ -573,17 +562,12 @@ def handle_message(data):
             total_seconds = x['duration']['amount']
             duration_over = x['duration']['over']
             distance_over = x['distance']['over']
+
+            # Some scroll logic
             scrolled += 1
-
-            # Some scroll logic for last pages
-            if not last_page:
-                show_entries = entries
-                if scrolled: entries = (entries * scrolled)
-                else: entries = 0
-                if(entries == 0): entries = show_entries
-
-            queryFromLast = "WHERE j.id < {} ".format(last_id)
-            if scrolled == 1: queryFromLast = ''
+            show_entries = entries
+            entries = (entries * scrolled)
+            if(entries == 0): entries = show_entries
 
             # Distance
             if has_meters:
@@ -604,11 +588,7 @@ def handle_message(data):
             measure = '>'
             query_dist = ''
             if distance_over: measure = '<'
-
-            if has_meters and scrolled == 1: 
-                query_dist = ' WHERE j.distance {} {} '.format(measure, total_meters)
-            elif has_meters:
-                query_dist = ' AND j.distance {} {} '.format(measure, total_meters)
+            if has_meters: query_dist = ' WHERE j.distance {} {} '.format(measure, total_meters)
             
             # Duration
             measure = '>'
@@ -617,10 +597,8 @@ def handle_message(data):
 
             if has_seconds and has_meters: 
                 query_dur = ' AND j.duration {} {} '.format(measure, total_seconds)
-            elif has_seconds and scrolled == 1: 
+            elif has_seconds: 
                 query_dur = ' WHERE j.duration {} {} '.format(measure, total_seconds)
-            elif has_seconds:
-                query_dur = ' AND j.duration {} {} '.format(measure, total_seconds)
 
             # Search
             query_params = []
@@ -693,30 +671,26 @@ def handle_message(data):
             else: 
                 
                 # Client wants to see the last page which becomes a bit funky 
-                query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure, s.x, s.y, sr.x, sr.y, s.id, sr.id " \
+                query = "SELECT * " \
                         "FROM ( " \
-                            "SELECT j.* FROM `city_journeys` j " \
+                            "SELECT j.id, t.name, tr.name AS ret, j.distance, j.duration, j.departure, s.x, s.y, sr.x AS ret_x, sr.y AS ret_y, s.id AS s_id, sr.id AS ret_id " \
+                            "FROM `city_journeys` j " \
                             "LEFT JOIN `city_translations` t " \
                             "ON t.stationID = j.departure_station AND t.languageID=1 " \
                             "LEFT JOIN `city_translations` tr " \
                             "ON tr.stationID = j.return_station AND tr.languageID=1 " \
-                            "{}{}{}{}ORDER BY {} DESC LIMIT {}".format(
-                            queryFromLast,
+                            "LEFT JOIN `city_stations` s " \
+                            "ON s.id = t.stationID " \
+                            "LEFT JOIN `city_stations` sr " \
+                            "ON sr.id = tr.stationID " \
+                            "{}{}{}ORDER BY {} DESC LIMIT {}".format(
                             query_dist, 
                             query_dur, 
                             search_query,
                             column_sort, 
                             entries) + \
                         ") j " \
-                        "LEFT JOIN `city_translations` t " \
-                        "ON t.stationID = j.departure_station AND t.languageID=1 " \
-                        "LEFT JOIN `city_translations` tr " \
-                        "ON tr.stationID = j.return_station AND tr.languageID=1 " \
-                        "LEFT JOIN `city_stations` s " \
-                        "ON s.id = t.stationID " \
-                        "LEFT JOIN `city_stations` sr " \
-                        "ON sr.id = tr.stationID " \
-                        "{}ORDER BY {} ASC LIMIT {};".format(queryFromLast, column_sort, (entries + int(per_page)))
+                        "ORDER BY {} ASC;".format(column_sort)
             
             # Fetch
             print('\n [#] Fetch - {}\n'.format(query))
@@ -740,8 +714,11 @@ def handle_message(data):
 
                 # Logic for pagescrolling
                 if not last_page:
-                    view_total = (entries - show_entries)
-                    if not ( total > view_total ): continue
+                    if(scrolled > 1) and (total <= (entries - show_entries)): 
+                        continue
+                else: 
+                    if(scrolled > 1) and (total > (entries - ((show_entries * scrolled) - show_entries ))): 
+                        continue
 
                 i += 1
                 idx = row[0]

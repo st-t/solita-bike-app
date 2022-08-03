@@ -60,7 +60,9 @@ export default class index extends Component
             goToLast: false, goingToLast: false,
             lastApplied: [], curApplied: [], 
             filterMeters: 0, filterSeconds: 0,
-            pagesToLoad: '5', search: ''
+            pagesToLoad: '5', search: '',
+
+            sqlConnected: false,
         };
         
         this.changeProps = this.changeProps.bind(this);
@@ -103,9 +105,7 @@ export default class index extends Component
         ];
 
         this.setState({lastApplied: arr});
-
-        // Start by fetching journeys from database
-        this.formatJsonRequest();
+        this.checkServer();
 
         // Listen the server for messages
         socket.on('message', async (msg) => 
@@ -120,24 +120,46 @@ export default class index extends Component
             {
                 // Parse the json string 
                 const obj = JSON.parse(json_response);
+                
+                // Check if we are connected 
+                if( obj.hasOwnProperty('check') )
+                {
+                    if(obj.check.connected === 'True')
+                    {
+                        this.setState({sqlConnected: true});
+
+                        // Start by fetching journeys from database
+                        this.formatJsonRequest();
+                    }
+                }
 
                 // There was no results
                 if( obj.hasOwnProperty('null') )
                 {
+                    this.props.changeProps({isLoaded: true});
+                        
                     if(this.state.goingToLast) 
-                        this.setState( {goToLast: true, goingToLast: false}, this.applyFilters );
+                        this.setState( {goToLast: true, goingToLast: false} );
                     else 
                     {
                         this.setState( {
                             search: '',
                             metersChecked: false, 
                             secondsChecked: false, 
-                            displayNoResults: true
-                        }, this.applyFilters );
+                            displayNoResults: true,
+                            displayFilters: true
+                        } );
                     } 
                 }
             }
         });
+    }
+
+    // Check sql status 
+    checkServer()
+    {
+        const obj = { type: 'check' };
+        this.setState( {filters: obj}, this.serverRequest );
     }
 
     // Client wants to see settings 

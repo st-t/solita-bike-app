@@ -334,6 +334,10 @@
 
 /* Mobile */
 @media screen and (max-width:1014px) {
+
+    .pages {
+        font-size: 30px;
+    }
     
     .entry_visible {
         padding-top: 2px;

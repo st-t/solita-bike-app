@@ -1,5 +1,5 @@
 import React, { Component, useState } from 'react'
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCogs } from '@fortawesome/free-solid-svg-icons'; 
 
@@ -10,6 +10,7 @@ import styles from './index.module.css';
 import anims from '../anims.module.css';
 import "react-datepicker/dist/react-datepicker.css"
 
+var refreshLink = false;
 var start_date, end_date;
 
 
@@ -59,28 +60,36 @@ class Station extends Component
         {
             data:{},
             filters:{},
+
             id: null,
-            expandFilters: false,
-            needApply: false,
-            filtersChecked: false,
-            lastApplied: [], curApplied: [], 
-            toDate: null, fromDate: null,
-            linkStations: false,
+            
             isCreate: false,
             mapPreview: false,
+            linkStations: false,
+            needApply: false,
+            expandFilters: false,
+            filtersChecked: false,
+            
+            // Filter applied settings 
+            lastApplied: [], curApplied: [], 
+            
+            // Filter dates
+            toDate: null, fromDate: null,
 
             // Station info 
             // id, name, address, city, x, y
             station: ['', '', '', '', '', ''],
 
+            // Station data 
             journeys_to: 0,
-            journeys_from: 0,
             distance_to: 0,
+            journeys_from: 0,
             distance_from: 0,
-            top_end: [ [], [] ],
-            top_start: [ [], [] ],
+            top_end: [ [], [], [] ],
+            top_start: [ [], [], [] ],
 
             pageLoaded: false,
+            sqlConnected: false,
         };
         
         this.changeProps = this.changeProps.bind(this);
@@ -91,9 +100,8 @@ class Station extends Component
     {
         this.setState({pageLoaded: false});
         this.props.changeProps({isLoaded: false});
-        
-        // Start with making a request
-        this.stationRequest();
+
+        this.checkServer();
 
         // Listen the server for messages
         socket.on('message', (msg) => 
@@ -108,6 +116,18 @@ class Station extends Component
             {
                 // Parse the json string 
                 const obj = JSON.parse(json_response);
+
+                // Check if we are connected 
+                if( obj.hasOwnProperty('check') )
+                {
+                    if(obj.check.connected === 'True')
+                    {
+                        this.setState({sqlConnected: true});
+
+                        // Start with making a request
+                        this.stationRequest();
+                    }
+                }
 
                 // Station info
                 if( obj.hasOwnProperty('station_info') )
@@ -127,13 +147,13 @@ class Station extends Component
                 // Journeys to this station
                 if( obj.hasOwnProperty('station_journeys_to') )
                 {
-                    this.setState({journeys_to : obj.station_journeys_to.num});
+                    this.setState({journeys_to : this.numberWithCommas(obj.station_journeys_to.num)});
                 }
 
                 // Journeys from this station
                 if( obj.hasOwnProperty('station_journeys_from') )
                 {
-                    this.setState({journeys_from : obj.station_journeys_from.num});
+                    this.setState({journeys_from : this.numberWithCommas(obj.station_journeys_from.num)});
                 } 
 
                 // Average distance traveled to this station
@@ -145,7 +165,7 @@ class Station extends Component
                     if(fixed_dist < 1000)
                         dist_str = String(fixed_dist) + ' m'
                     else 
-                        dist_str = String( parseFloat(fixed_dist / 1000).toFixed(2) ) + ' km'
+                        dist_str = this.numberWithCommas( parseFloat(fixed_dist / 1000).toFixed(2) ) + ' km'
 
                     this.setState({distance_to : dist_str});
                 }
@@ -159,7 +179,7 @@ class Station extends Component
                     if(fixed_dist < 1000)
                         dist_str = String(fixed_dist) + ' m'
                     else 
-                        dist_str = String( parseFloat(fixed_dist / 1000).toFixed(2) ) + ' km'
+                        dist_str = this.numberWithCommas( parseFloat(fixed_dist / 1000).toFixed(2) ) + ' km'
 
                     this.setState({distance_from : dist_str});
                 }
@@ -190,6 +210,18 @@ class Station extends Component
         this.setState(data);
     }
 
+    // Parse large number 1000000 => 1,000,000
+    numberWithCommas(x) {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    // Check sql status 
+    checkServer()
+    {
+        const obj = { type: 'check' };
+        this.setState( {filters: obj}, this.serverReq );
+    }
+
     // Called on page load
     stationRequest()
     {
@@ -209,7 +241,6 @@ class Station extends Component
     {
         // Scroll user to top when we're loading the page
         window.scrollTo(0, 0);
-        this.props.changeProps({isLoaded: false});
 
         // Change the json to a string and send the request
         const jsonRequest = JSON.stringify(this.state.filters); 
@@ -261,6 +292,13 @@ class Station extends Component
                         case "station_e": 
                         {
                             if(type === 2) top_end[0].push( data_obj[key][attr] );
+                            break;
+                        }
+
+                        case "index": 
+                        {
+                            if(type === 2) top_end[2].push( data_obj[key][attr] );
+                            else top_start[2].push( data_obj[key][attr] );
                             break;
                         }
 
@@ -354,19 +392,25 @@ class Station extends Component
     }
 
     // Client wants to apply filters 
-    applyFilters()
+    applyFilters(fromLink=false)
     {
         const { curApplied, filtersChecked, toDate, fromDate, needApply, pageLoaded } = this.state;
-        
-        if(!needApply || !pageLoaded) return; 
+
+        if(!fromLink)
+        {
+            if(!needApply || !pageLoaded) return; 
+            if(!filtersChecked || toDate === null || fromDate === null) return; 
+        }
+
+        if(!pageLoaded) return; 
+
+        refreshLink = fromLink;
+        window.scrollTo(0, 0);
 
         this.setState({
             needApply: false,
             lastApplied: curApplied
         });
-        
-        // If filter isn't checked, stop
-        if(!filtersChecked || toDate === null || fromDate === null) return; 
 
         // Set loading screen and callback request
         this.props.changeProps({isLoaded: false});
@@ -379,8 +423,8 @@ class Station extends Component
             journeys_from: 0,
             distance_to: 0,
             distance_from: 0,
-            top_end: [[], []],
-            top_start: [[], []],
+            top_end: [ [], [], [] ],
+            top_start: [ [], [], [] ],
             pageLoaded: false
         
         }, this.sendTimeRequest );
@@ -394,7 +438,7 @@ class Station extends Component
         const obj = { 
             type: 'station_data', 
             id: this.props.params.stationID ,
-            date: true,
+            date: !refreshLink,
             from: fromDate,
             to: toDate
         };
@@ -407,18 +451,25 @@ class Station extends Component
     {
 
         const { top_start } = this.state;
-        const titles = [], counts = [];
+        const titles = [], counts = [], links = [];
         
         for (let i = 0; i < top_start[0].length; i++)
         {
             counts.push( top_start[1][i] );
             titles.push( top_start[0][i] );
+            links.push( top_start[2][i] );
         }
 
         const html = titles.map( (string, index)  => 
         {
+            const stationLink = '/station/' + links[index];
+
             return (
-                <li key={index}>{string} <p>({counts[index]} journeys)</p></li>
+                <li key={index}>
+                    <Link onClick={() => this.applyFilters(true)} className={styles.station_link} to={stationLink}>
+                        {string} <p>({counts[index]} journeys)</p>
+                    </Link> 
+                </li>
             );
         });
 
@@ -429,18 +480,25 @@ class Station extends Component
     renderTopDeparture()
     {
         const { top_end } = this.state;
-        const titles = [], counts = [];
+        const titles = [], counts = [], links = [];
         
         for (let i = 0; i < top_end[0].length; i++)
         {
             counts.push( top_end[1][i] );
             titles.push( top_end[0][i] );
+            links.push( top_end[2][i] );
         }
 
         const html = titles.map( (string, index)  => 
         {
+            const stationLink = '/station/' + links[index];
+
             return (
-                <li key={index}>{string} <p>({counts[index]} journeys)</p></li>
+                <li key={index}>
+                    <Link onClick={() => this.applyFilters(true)} className={styles.station_link} to={stationLink}>
+                        {string} <p>({counts[index]} journeys)</p>
+                    </Link> 
+                </li>
             );
         });
 

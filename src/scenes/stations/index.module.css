@@ -12,3 +12,17 @@
     color: #fff;
     width: 100%;
 }
+
+.hide_res {
+    display: none;
+}
+
+.no_results {
+    position: relative;
+    width: 100%;
+    margin: auto;
+    color: red;
+    font-size: 35px;
+    text-align: center;
+    text-overflow: ellipsis;
+}

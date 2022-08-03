@@ -3,10 +3,10 @@
     MySQL functions
 """
 
-import codecs
-from logging import exception
-import pymysql
 import json
+import codecs
+import pymysql
+from logging import exception
 
 mysql = []
 importing = False 
@@ -52,7 +52,7 @@ def exec_query(query, args=[], batch=False, get_insert=False, socket=None, sid=N
     - return : array of results, empty array if no results
     """
     global connected
-
+    
     # Connect to database
     try:
         MySQLInit = pymysql.connect(
@@ -62,7 +62,6 @@ def exec_query(query, args=[], batch=False, get_insert=False, socket=None, sid=N
             database=mysql[1],
             charset="utf8mb4"
         )
-
         SQL_Query = MySQLInit.cursor()
 
     except Exception as err:
@@ -402,10 +401,7 @@ def scrape_journeys(console_log=False, socket=None, sid=None):
 
                             if data[x].startswith('"'):
                                 if len(data) == 8: 
-                                    # data[x] = data[x].replace('"', '')
-                                    # data[x+2] = data[x+2].replace('"', '')
                                     data[x] = data[x] + data[x + 2]
-                                    print('new data:', data[x])
                                     del data[x + 2]
                                 else:
                                     data[x] = data[x] + data[x + 1]

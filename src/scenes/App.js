@@ -89,8 +89,6 @@ export default class App extends Component
     // Initialization(s) that requires DOM nodes should go here
     componentDidMount() 
     {
-        this.checkServer();
-
         socket.on('message', async (msg) => 
         {
             this.setState({data:msg})
@@ -102,17 +100,16 @@ export default class App extends Component
             {
                 const obj = JSON.parse(json_response);
 
+                // Client landed
                 if( obj.hasOwnProperty('connection') ) 
                     console.log('>> socket response: ' + String(obj.connection) ); 
-
+                
+                // Server sent SQL connection status
                 if( obj.hasOwnProperty('check') )
                 {
                     if(obj.check.connected === 'True')
                         this.setState({sqlConnected: true});
-
-                    console.log('Connected sql: %s', obj.check.connected);
                 }
-                    
             }
         });
 
@@ -151,8 +148,6 @@ export default class App extends Component
 
     render() 
     {
-        const {sqlConnected, sqlStatus} = this.state; 
-
         return (
             <>
                 {/* If we need to load something before we can display the page
@@ -172,14 +167,12 @@ export default class App extends Component
 
                         {/* This (navbar) is always visible */}
                         <div className={styles.header_links}>
-
                             <li className={styles.navitem}>
                                 <Link to="/" className={styles.navlink} >Journeys</Link>
                                 <Link to="/stations" className={styles.navlink} >Stations</Link>
                                 <Link to="/settings" className={styles.navlink} >Settings</Link>
                                 <Link to="/create" className={styles.navlink} >Add New</Link>
                             </li>
-
                         </div>
 
                         <MobileNavLinks/>

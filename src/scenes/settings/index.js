@@ -17,17 +17,18 @@ export default class index extends Component
         {
             data:{},
             filters: {},
+
             connect: false,
             connected: false,
-            database: ['', '', '', ''],
-            input: 'Connect',
+            importing: true,
+            displayOK: false,
+            displayErr: false,
 
             okMsg: '',
             errMsg: '',
-            displayOK: false,
-            displayErr: false,
+            input: 'Connect',
+            database: ['', '', '', ''],
             status_msg: ['', '', '', '', ''],
-            importing: true,
         };
 
         this.changeProps = this.changeProps.bind(this);
@@ -61,7 +62,7 @@ export default class index extends Component
                         input: 'OK!',
                         displayOK: true,
                         displayErr: false,
-                        okMsg: 'Connected OK!'
+                        okMsg: 'OK!'
                     });
                     
                     this.checkServer();
@@ -81,21 +82,21 @@ export default class index extends Component
 
                     this.props.changeProps({isLoaded: true});
                 }
-
+                
+                // Server response of connection status 
                 if( obj.hasOwnProperty('check') )
                 {
                     if(obj.check.check === 'True')
                     {
+                        // Dataset import is running, let the client know 
                         let items = ['Import running...', 'Please wait...', '', '', ''];
                         this.setState( {status_msg: items} );
 
-                        console.log('currenty importing');
                         this.props.changeProps({isLoaded: true});
                         this.setState({connected: true, importing: true});
                     }
                     else 
                     {
-                        console.log('currenty not importing %s', obj.check);
                         this.setState({importing: false});
                         this.props.changeProps({isLoaded: true});
                     }
@@ -103,10 +104,6 @@ export default class index extends Component
                     if(obj.check.connected === 'True')
                     {
                         this.setState({connected: true, input: 'OK!'});
-                    }
-                    else 
-                    {
-
                     }
                 }
                 
@@ -278,8 +275,9 @@ export default class index extends Component
                     <div className={`${connected === true ? styles.settings_footer : styles.settings_off} `}>
 
                         <p className={styles.settings_title}>Dataset import</p>
-                        <p className={styles.settings_low}>Imports datasets into your database</p>
-                        <p className={styles.settings_low}>Please make sure your db is empty</p>
+                        <p className={styles.settings_low}>Imports datasets into database</p>
+                        <p className={styles.settings_low}>Please make sure your associated tables are empty</p>
+                        <p className={styles.settings_low}>This will take a couple of minutes</p>
                         <p className={styles.settings_low}>Run this only once</p>
 
                         <div className={styles.init}>
@@ -296,8 +294,6 @@ export default class index extends Component
                                 <li>{status_msg[4]}</li>
                             </ul>
                         </div>
-
-
                     </div>
                 </div>
             </div>

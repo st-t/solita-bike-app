@@ -84,7 +84,9 @@ export default class index extends Component
             dropdownDeparture: false, dropdownReturn: false,
 
             // Creating journey input strings
-            departure_station: '', return_station: ''
+            departure_station: '', return_station: '',
+
+            sqlConnected: false,
         };
 
         this.changeProps = this.changeProps.bind(this);
@@ -96,9 +98,8 @@ export default class index extends Component
     {
         this.setState({stationsLoaded: false});
         this.props.changeProps({isLoaded: true});
-        
-        // Get stations data 
-        this.stationsRequest();
+
+        this.checkServer();
 
         // Listen the server for messages
         socket.on('message', (msg) => 
@@ -113,6 +114,18 @@ export default class index extends Component
             {
                 // Parse the json string 
                 const obj = JSON.parse(json_response);
+
+                // Check if we are connected 
+                if( obj.hasOwnProperty('check') )
+                {
+                    if(obj.check.connected === 'True')
+                    {
+                        this.setState({sqlConnected: true});
+
+                        // Get stations data 
+                        this.stationsRequest();
+                    }
+                }
 
                 // We recieved stations data
                 if( obj.hasOwnProperty('list_stations') )
@@ -161,6 +174,13 @@ export default class index extends Component
 
     changeProps = (data) => {
         this.setState(data, this.checkValues);
+    }
+
+    // Check sql status 
+    checkServer()
+    {
+        const obj = { type: 'check' };
+        this.setState( {filters: obj}, this.serverRequest );
     }
 
     // Handle server response
@@ -282,7 +302,6 @@ export default class index extends Component
     calcTimeDiff()
     {
         const {dateOfDeparture, dateOfReturn} = this.state;
-
         const date1 = new Date(dateOfDeparture);
         const date2 = new Date(dateOfReturn);
         const diffMilliseconds = Math.abs(date2 - date1);
@@ -309,11 +328,13 @@ export default class index extends Component
     // Client wants to expand departure part
     handleDeparture()
     {
+        if(!this.state.sqlConnected) return; 
         this.setState({expandDeparture: !this.state.expandDeparture});
     }
 
     handleReturn()
     {
+        if(!this.state.sqlConnected) return; 
         this.setState({expandReturn: !this.state.expandReturn});
     }
 
@@ -510,6 +531,8 @@ export default class index extends Component
     // Check if client has set all values and we can query them to database 
     checkValues()
     {
+        if(!this.state.sqlConnected) return; 
+
         const {
             d_x, d_y,
             r_x, r_y,
@@ -539,7 +562,7 @@ export default class index extends Component
     {
         var hours   = Math.floor(seconds / 3600);
         var minutes = Math.floor( ( seconds - (hours * 3600) ) / 60 );
-        var seconds = seconds - (hours * 3600) - (minutes * 60);
+        seconds = seconds - (hours * 3600) - (minutes * 60);
         return hours + 'h ' + minutes + 'min  ' + seconds + 's';
     }
 
@@ -548,6 +571,7 @@ export default class index extends Component
     {
         // Client hasn't set all data for this query 
         if(!this.state.canCreate) return;
+        if(!this.state.sqlConnected) return; 
         
         const {
             r_id, d_id,
@@ -624,6 +648,7 @@ export default class index extends Component
     {
         // Client hasn't set all data for this query 
         if(!this.state.canCreateStation) return;
+        if(!this.state.sqlConnected) return; 
         
         const {
             station_long, station_lat, 
