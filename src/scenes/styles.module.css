@@ -10,15 +10,20 @@
 }
 
 .sql_status {
-    display: none;
-    position: absolute;
+    display: block;
+    position: fixed;
     bottom: 6px;
     left: 15px;
     color: red;
     font-style: italic;
-    font-size: 16px;
+    font-size: 35px;
     line-break: auto;
-    max-width: 130px;
+    width: 40%;
+    z-index: 9999;
+}
+
+.none {
+    display: none;
 }
 
 .maps_outer {

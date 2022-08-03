@@ -7,7 +7,6 @@ from logging import exception
 from multiprocessing.sharedctypes import Value
 import __sql as db
 
-import json
 from flask_socketio import SocketIO as sio
 from flask import Flask, send_from_directory, request, jsonify
 
@@ -42,7 +41,7 @@ def starts(var, string):
 def respond_to_client(socketio, json_response, sid):
 
     # Sends a socketio message to client
-    res = json.dumps(json_response)
+    res = db.json.dumps(json_response)
     socketio.emit('message', res, to=sid)
 
 
@@ -66,13 +65,51 @@ def handle_message(data):
 
         # Respond
         r = {"connection": '200 OK'}
-        json_response = json.dumps(r)
+        json_response = db.json.dumps(r)
         socketio.emit('message', json_response, to=request.sid)
 
     # We received a request from a client
     if starts(data, '{'):
 
-        message = json.loads(data)
+        message = db.json.loads(data)
+
+        # Client wants to import datasets 
+        if message['type'] == 'start_import':
+            db.run_import(socketio, request.sid)
+
+
+        # Client landed on settings page
+        if message['type'] == 'check':
+
+            r = {"check":{}}
+            
+            r["check"] = {
+                "check": str(db.importing),
+                "connected": str(db.connected)
+            }
+            respond_to_client(socketio, r, request.sid)
+
+
+        # Client wants to connect to database
+        if message['type'] == 'connect':
+            
+            x = message 
+
+            host = x['host']
+            _db = x['db']
+            user = x['user']
+            passw = x['p']
+
+            db.mysql = [host, _db, user, passw]
+            db.init_tables(socketio, request.sid)
+
+            r = {"check":{}}
+
+            r["check"] = {
+                "check": str(db.importing),
+                "connected": str(db.connected)
+            }
+
 
         # Client landed on single station view
         if message['type'] == 'station_data':
@@ -770,7 +807,7 @@ def main():
     domain = 'localhost'
 
     # Create database tables
-    db.init_tables()
+    # db.socketio_init(socketio)
 
     print(' [#] __init:', domain, port)
     socketio.run(app, host=domain, port=port)

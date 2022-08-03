@@ -13,7 +13,7 @@ import styles from './styles.module.css';
 import useMightyMouse from 'react-hook-mighty-mouse';
 
 
-const Header = ({sqlStatus}) => 
+const Header = ({sqlStatus, sqlConnected}) => 
 {
     // Tracks mouse movement to make the graphics move
     const {position: { client },} = useMightyMouse(true, 'trackElement');
@@ -35,7 +35,7 @@ const Header = ({sqlStatus}) =>
                 </div>
             </div>
 
-            <small className={styles.sql_status}>{sqlStatus}</small>
+            <small className={`${sqlConnected === false ? styles.sql_status : styles.none} `}>{sqlStatus}</small>
         </>
     );
 }
@@ -77,8 +77,10 @@ export default class App extends Component
         this.state = 
         {
             data: {},
+            filters: {},
             isLoaded: false,
-            sqlStatus: '✗ Database is not set'
+            sqlStatus: '✗ Database is not set',
+            sqlConnected: false,
         }
 
         this.changeProps = this.changeProps.bind(this);
@@ -87,6 +89,8 @@ export default class App extends Component
     // Initialization(s) that requires DOM nodes should go here
     componentDidMount() 
     {
+        this.checkServer();
+
         socket.on('message', async (msg) => 
         {
             this.setState({data:msg})
@@ -97,8 +101,18 @@ export default class App extends Component
             if( String( typeof(json_response) ) === 'string' )
             {
                 const obj = JSON.parse(json_response);
-                // Connection notify
-                if( obj.hasOwnProperty('connection') ) console.log('>> socket response: ' + String(obj.connection) ); 
+
+                if( obj.hasOwnProperty('connection') ) 
+                    console.log('>> socket response: ' + String(obj.connection) ); 
+
+                if( obj.hasOwnProperty('check') )
+                {
+                    if(obj.check.connected === 'True')
+                        this.setState({sqlConnected: true});
+
+                    console.log('Connected sql: %s', obj.check.connected);
+                }
+                    
             }
         });
 
@@ -120,15 +134,36 @@ export default class App extends Component
         this.setState(data);
     }
 
+    // Check connection status 
+    checkServer()
+    {
+        const obj = { type: 'check' };
+        this.setState( {filters: obj}, this.serverRequest );
+    }
+
+    // Sends a request to server
+    serverRequest()
+    {
+        // Change the json to a string and send the request
+        const jsonRequest = JSON.stringify(this.state.filters); 
+        socket.send(jsonRequest);
+    }
+
     render() 
     {
+        const {sqlConnected, sqlStatus} = this.state; 
+
         return (
             <>
                 {/* If we need to load something before we can display the page
                     => use this loading screen                      */}
-                {!this.state.isLoaded ? <Loader /> : null}
+                
+                {!this.state.isLoaded 
+                ? this.state.sqlConnected ? <Loader /> : null 
+                : null}
 
-                <Header sqlStatus={this.state.sqlStatus}/>
+                {/* Header */}
+                <Header sqlStatus={this.state.sqlStatus} sqlConnected={this.state.sqlConnected}/>
 
                 {/* Let's handle routing */}
                 <Router>

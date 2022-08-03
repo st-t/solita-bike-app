@@ -4,11 +4,38 @@
 """
 
 import codecs
+from logging import exception
 import pymysql
+import json
+
+mysql = []
+importing = False 
+connected = False 
 
 
 
-def exec_query(query, args=[], batch=False, get_insert=False):
+def socket_send(socket, sid, r):
+
+    """     
+    socket_send()
+
+    - parameters : (
+            [object] socketio connection object
+            [str] client sid
+            [json] json object
+        )
+        
+    - description : sends message to a client
+    - return : none 
+    """
+    
+    if socket: 
+        res = json.dumps(r)
+        socket.emit('message', res, to=sid)
+
+
+
+def exec_query(query, args=[], batch=False, get_insert=False, socket=None, sid=None):
 
     """ 
     exec_query()
@@ -17,33 +44,47 @@ def exec_query(query, args=[], batch=False, get_insert=False):
             [str] query to execute,
             [arr] array list of arguments
             [bool] are we executing a mass query?
+            [object] socketio connection object
+            [str] client sid
         )
 
     - description : executes a query to database
     - return : array of results, empty array if no results
     """
-    
+    global connected
+
     # Connect to database
     try:
         MySQLInit = pymysql.connect(
-            host="",
-            user="",
-            passwd="",
-            database="",
+            host=mysql[0],
+            user=mysql[2],
+            passwd=mysql[3],
+            database=mysql[1],
             charset="utf8mb4"
         )
 
         SQL_Query = MySQLInit.cursor()
 
-    except:
-        print(' [x] Error connecting to MySQL Database')
-        return
+    except Exception as err:
+        print(' [x] Error connecting to MySQL Database:', err)
 
-    # Execute and commit the query
-    if not batch:
-        SQL_Query.execute(query, args)
-    else:
-        SQL_Query.executemany(query, args)
+        r = {"error": str(err)}
+        socket_send(socket, sid, r)
+        return -1
+
+    connected = True 
+
+    try: 
+        if not batch:
+            SQL_Query.execute(query, args)
+        else:
+            SQL_Query.executemany(query, args)
+    except Exception as err: 
+        r = {"error": str(err)}
+        socket_send(socket, sid, r)
+
+        print(' [x] Error:', err)
+        return -1
 
     MySQLInit.commit()
 
@@ -58,13 +99,15 @@ def exec_query(query, args=[], batch=False, get_insert=False):
 
 
 
-def scrape_stations(console_log=False):
+def scrape_stations(console_log=False, socket=None, sid=None):
 
     """ 
     scrape_stations()
 
     - parameters : (
             [bool] enable console logging (dev enviroment)
+            [object] socketio connection object
+            [str] client sid
         )
 
     - description : reads stations file and inserts data to database
@@ -84,7 +127,7 @@ def scrape_stations(console_log=False):
     if len(languages) < 3:
         for x in langs:
             if not x in languages:
-                print(' [#] Inserted', x, 'language row')
+                socket_send(socket, sid, {"status": str('Inserted {} language row'.format(x))})
                 query = "INSERT INTO `city_languages` (`language`) VALUES (%s);"
                 exec_query(query, [x])
 
@@ -112,6 +155,7 @@ def scrape_stations(console_log=False):
 
         # Mass query data
         stations_batch = []
+        socket_send(socket, sid, {"status": str('Processing stations dataset...')})
 
         for line in lines:
             
@@ -153,13 +197,13 @@ def scrape_stations(console_log=False):
 
             i += 1
             if i > 200:
-                insert_station_batch(stations_batch)
+                insert_station_batch(stations_batch, socket, sid)
 
                 i = 0
                 stations_batch = []
 
         # File ended, insert rest of the rows if we didn't do that already
-        if not i == 0: insert_station_batch(stations_batch)
+        if not i == 0: insert_station_batch(stations_batch, socket, sid)
 
     # Fetch ids to insert translations, so it matches the increment 
     query = "SELECT id FROM `city_stations` ORDER BY id ASC;"
@@ -174,6 +218,7 @@ def scrape_stations(console_log=False):
         # Mass query data
         i = 0
         translations_batch = []
+        socket_send(socket, sid, {"status": str('Processing translations...')})
 
         for line in lines:
             
@@ -215,23 +260,24 @@ def scrape_stations(console_log=False):
 
             i += 1
             if i > 200:
-                insert_translations_batch(translations_batch)
+                insert_translations_batch(translations_batch, socket, sid)
                 i = 0
                 translations_batch = []
 
         # File ended, insert rest of the rows if we didn't do that already
-        if not i == 0: insert_translations_batch(translations_batch)
+        if not i == 0: insert_translations_batch(translations_batch, socket, sid)
 
 
 
-def insert_translations_batch(translations_batch):
+def insert_translations_batch(translations_batch, socket, sid):
 
     """ 
     insert_translations_batch()
 
     - parameters : (
             [array] array of query arguments
-            [array] array of query arguments
+            [object] socketio connection object
+            [str] client sid
         )
 
     - description : executes a batch query to database, called from scrape_stations()
@@ -244,18 +290,19 @@ def insert_translations_batch(translations_batch):
             "VALUES( %s, %s, %s, %s, %s )"
 
     exec_query(query, translations_batch, True)
-    print(' [#] Translation batch query successful ')
+    socket_send(socket, sid, {"status": str('Translation batch query successful...')})
 
 
 
-def insert_station_batch(stations_batch):
+def insert_station_batch(stations_batch, socket, sid):
 
     """ 
     insert_station_batch()
 
     - parameters : (
             [array] array of query arguments
-            [array] array of query arguments
+            [object] socketio connection object
+            [str] client sid
         )
 
     - description : executes a batch query to database, called from scrape_stations()
@@ -267,17 +314,19 @@ def insert_station_batch(stations_batch):
             "VALUES( %s, %s, %s )"
 
     exec_query(query, stations_batch, True)
-    print(' [#] Stations batch query successful ')
+    socket_send(socket, sid, {"status": str('Stations batch query successful...')})
 
 
 
-def scrape_journeys(console_log=False):
+def scrape_journeys(console_log=False, socket=None, sid=None):
     
     """ 
     scrape_journeys()
 
     - parameters : (
             [bool] enable console logging (dev enviroment)
+            [object] socketio connection object
+            [str] client sid
     )
 
     - description :
@@ -324,7 +373,7 @@ def scrape_journeys(console_log=False):
     # Loop all files
     for file in files:
 
-        print(' [#] Processing file', file, '...')
+        socket_send(socket, sid, {"status": str('Processing file {} ...'.format(file))})
 
         # Open with codecs to get special characters correct
         # Also in reversed, since newest journeys start from the bottom
@@ -398,7 +447,6 @@ def scrape_journeys(console_log=False):
                             data[4] = station_ids[return_id]
                         except: continue
 
-                        
                         # Filter journeys we don't want to import 
                         # Distance or duration is too low
                         if float(data[6]) < 10.0 or float(data[7]) < 10.0: 
@@ -427,17 +475,17 @@ def scrape_journeys(console_log=False):
                 if i > 75000: 
                     i = 1
                     queries += 1
-                    insert_journey_batch(journeys_batch, queries)
+                    insert_journey_batch(journeys_batch, queries, socket, sid)
                     journeys_batch = []
 
             # Insert the rest if we didn't do that already
-            if not i == 0: insert_journey_batch(journeys_batch, 0)
+            if not i == 0: insert_journey_batch(journeys_batch, 0, socket, sid)
 
     print(' [#] Done.')
 
 
 
-def insert_journey_batch(journeys_batch, queries):
+def insert_journey_batch(journeys_batch, queries, socket, sid):
 
     """ 
     insert_journey_batch()
@@ -445,6 +493,8 @@ def insert_journey_batch(journeys_batch, queries):
     - parameters : (
             [array] array of query arguments
             [int] amount of queries we've done(for debugging)
+            [object] socketio connection object
+            [str] client sid
         )
 
     - description : executes a batch query to database, called from scrape_journeys()
@@ -457,16 +507,20 @@ def insert_journey_batch(journeys_batch, queries):
             "VALUES( %s, %s, %s, %s, %s, %s )"
 
     exec_query(query, journeys_batch, True)
-    if not queries == 0: print(' [#] Batch query successful:', queries*75000)
+    if not queries == 0: socket_send(socket, sid, {"status": str('Journey batch query successful: {} ...'.format(queries*75000))})
 
 
 
-def init_tables():
+def init_tables(socket, sid):
 
     """     
     init_tables()
 
-    - parameters : ()
+    - parameters : (
+            [object] socketio connection object
+            [str] client sid
+        )
+
     - description : creates database table(s) 
     - return : none 
     """
@@ -484,7 +538,7 @@ def init_tables():
             ") " \
             "COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB;"
 
-    exec_query(query, [])
+    if exec_query(query, [], False, False, socket, sid) == -1: return
 
     # Languages for station information
     # Language is defined by its ALPHA-2 code
@@ -497,7 +551,7 @@ def init_tables():
             ") " +\
             "COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB;"
 
-    exec_query(query, [])
+    if exec_query(query, [], False, False, socket, sid) == -1: return
 
     # Station information 
     # Re-structured for possibility to add more languages
@@ -518,7 +572,7 @@ def init_tables():
             ") " +\
             "COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB;"
 
-    exec_query(query, [])
+    if exec_query(query, [], False, False, socket, sid) == -1: return
 
     # Journeys
     # We don't need to specify names here, since they're already in other table
@@ -541,6 +595,30 @@ def init_tables():
             ") " \
             "COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB;"
 
-    exec_query(query, [])
+    if exec_query(query, [], False, False, socket, sid) == -1: return
+    socket_send(socket, sid, {"OK": str('200')})
 
 
+
+def run_import(socket, sid):
+
+    """     
+    run_import()
+
+    - parameters : (
+            [object] socketio connection object
+            [str] client sid
+        )
+
+    - description : starts dataset import by request
+    - return : none 
+    """
+
+    global importing
+    if(importing): return 
+
+    importing = True 
+    scrape_stations(False, socket, sid)
+    scrape_journeys(False, socket, sid)
+    socket_send(socket, sid, {"OK": str('200')})
+    importing = False 

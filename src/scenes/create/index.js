@@ -10,6 +10,7 @@ import setHours from "date-fns/setHours";
 import setMinutes from "date-fns/setMinutes";
 
 var selectedDate;
+var last_date = [0, 0];
 
 
 const DateFormat = () => 
@@ -227,15 +228,52 @@ export default class index extends Component
 
         var d = Date.parse(data[1] + "1, 2012");
         if( !isNaN(d) ) d = new Date(d).getMonth() + 1;
-
+        
+        let close_tab = false;
+        const {d_station, r_station} = this.state;
         let format_date = Number(d) + '-' + data[2] + '-' + data[3] + ' ' + data[4];
 
         switch(type)
         {
             case 1: 
-                this.setState( {dateOfDeparture: dateObject, depar: format_date}, this.checkValues ); break;
+            {
+                // Check if we wanna close the station tab for client 
+                if( !( last_date[0] === 0 ) && !( last_date[0] === data[4] ) ) {
+                    close_tab = true;
+                }
+
+                if(d_station && close_tab) 
+                {
+                    selectedDate = 0;
+                    last_date[0] = 0;
+                    close_tab = false;
+                    this.setState({expandDeparture: false});
+                }
+                else last_date[0] = data[4];
+
+                this.setState( {dateOfDeparture: dateObject, depar: format_date}, this.checkValues ); 
+                break;
+            }
+                
             case 2: 
-                this.setState( {dateOfReturn: dateObject, ret: format_date}, this.calcTimeDiff ); break;
+            {
+                if( !( last_date[1] === 0 ) && !( last_date[1] === data[4] ) ) {
+                    close_tab = true;
+                }
+
+                if(r_station && close_tab) 
+                {
+                    selectedDate = 0;
+                    last_date[1] = 0;
+                    close_tab = false;
+                    this.setState({expandReturn: false});
+                } 
+                else last_date[1] = data[4];
+                
+                this.setState( {dateOfReturn: dateObject, ret: format_date}, this.calcTimeDiff ); 
+                break;
+            }
+                
             default: break;
         }
     }
