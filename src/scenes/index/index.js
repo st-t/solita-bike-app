@@ -460,6 +460,7 @@ export default class index extends Component
                             {/* When user clicks cogwheel => expand it */}
                             <div>
                                 <FontAwesomeIcon 
+                                data-cy="cog"
                                 onClick = {() => this.handleFiltersExpansion()} 
                                 className={`${expandFilters === true ? styles.icon_filters_open : styles.icon_filters} `} icon={faCogs} size="2x" />
                             </div>
@@ -473,6 +474,7 @@ export default class index extends Component
                                         <ul>
                                             <li>
                                                 <input 
+                                                data-cy="distf"
                                                 className={styles.checkbox} 
                                                 onChange={this.handleChecked} 
                                                 name="metersChecked" 
@@ -518,6 +520,7 @@ export default class index extends Component
                                         <ul>
                                             <li>
                                                 <input 
+                                                data-cy="distd"
                                                 className={styles.checkbox} 
                                                 onChange={this.handleChecked} 
                                                 name="secondsChecked" 
@@ -608,7 +611,7 @@ export default class index extends Component
                                             </li>
                                             <li></li>
                                             <li>
-                                                <button onClick={() => this.applyFilters()} className={`${needApply === true ? styles.f_apply : styles.f_applyDark} `}>Apply</button>
+                                                <button data-cy="applyf" onClick={() => this.applyFilters()} className={`${needApply === true ? styles.f_apply : styles.f_applyDark} `}>Apply</button>
                                             </li>
                                         </ul>
                                     </div>
@@ -618,7 +621,7 @@ export default class index extends Component
                     </div>
                     
                     {/* Search has failed */}
-                    <div className={`${displayNoResults === true ? styles.no_results : styles.hide_res} `}>
+                    <div data-py="no_res" className={`${displayNoResults === true ? styles.no_results : styles.hide_res} `}>
                         No results. Check your search filters.
                     </div>
                     

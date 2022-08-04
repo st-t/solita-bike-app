@@ -352,8 +352,8 @@ export default class NewList extends Component {
                     ?
                     <>
                         { sort_columns[index] === true 
-                        ? <FontAwesomeIcon className={styles.sort_icon_active} icon={faAngleUp} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} /> 
-                        : <FontAwesomeIcon className={styles.sort_icon} icon={faAngleDown} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} /> }
+                        ? <FontAwesomeIcon data-cy="sort" className={styles.sort_icon_active} icon={faAngleUp} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} /> 
+                        : <FontAwesomeIcon data-cy="sort" className={styles.sort_icon} icon={faAngleDown} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} /> }
                     </>
                     : null }
                 </li>
@@ -846,7 +846,7 @@ export default class NewList extends Component {
                 <ul className={styles.pages}>
                     <li>
                         <FontAwesomeIcon className={`${scrolledPage === 0 ? styles.pageSkipDeactivated : styles.pageSkip} `}
-                        icon={faCaretLeft} size="xs" onClick = { () => this.previousPages(true) } />
+                        data-cy="first" icon={faCaretLeft} size="xs" onClick = { () => this.previousPages(true) } />
                     </li>
                     <li>
                         <FontAwesomeIcon className={`${scrolledPage === 0 ? styles.pageSkipDeactivated : styles.pageScroller} `}
@@ -859,7 +859,7 @@ export default class NewList extends Component {
                     </li>
                     <li>
                         <FontAwesomeIcon className={`${calledLast === true || stopScroll ? styles.pageSkipDeactivated : styles.pageSkip} `}
-                        icon={faCaretRight} size="xs" onClick = { () => this.nextPages(true) } />
+                        data-cy="last" icon={faCaretRight} size="xs" onClick = { () => this.nextPages(true) } />
                     </li>
                 </ul>
             </>
