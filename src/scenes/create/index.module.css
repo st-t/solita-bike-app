@@ -107,7 +107,8 @@
 
 .j_departure_off {
     position: relative;
-    left: 20000px;
+    pointer-events: none;
+    cursor: default;
     opacity: 0;
     margin-bottom: 0px;
     width: 0;

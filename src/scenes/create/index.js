@@ -718,7 +718,7 @@ export default class index extends Component
                         <div className={styles.journey_list}>
                             <p data-cy="c_dep"
                             onClick = {() => this.handleDeparture()} 
-                            className={`${expandDeparture === true ? styles.departure_e : styles.departure} `}> Departure 🠓</p>
+                            className={`${expandDeparture === true ? styles.departure_e : styles.departure} `}> Departure </p>
 
                             {/* Expanded content */}
                             <div className = {`${expandDeparture === true ? styles.j_departure_visible : styles.j_departure_off} `} >
@@ -764,7 +764,7 @@ export default class index extends Component
                         <div className={styles.journey_list}>
                             <p data-cy="c_ret"
                             onClick = {() => this.handleReturn()} 
-                            className={`${expandReturn === true ? styles.departure_e : styles.departure} `}> Return 🠓</p>
+                            className={`${expandReturn === true ? styles.departure_e : styles.departure} `}> Return </p>
 
                             {/* Expanded content */}
                             <div className = {`${expandReturn === true ? styles.j_departure_visible : styles.j_departure_off} `} >
