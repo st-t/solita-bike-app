@@ -1,3 +1,21 @@
+.header_wrap {
+    padding-bottom: 30px;
+    padding-top: 30px;
+}
+
+/* Graphics */
+.logo_head {
+    position: absolute;
+    color: rgba(172, 226, 181, 0.719);
+    left: 30px;
+    font-size: 2rem;
+    opacity: 0.6;
+    font-weight: 1000;
+    top: 2px;
+    margin: auto;
+    font-style: oblique;
+}
+
 /* Signature */
 .sig {
     margin: 0 auto;
@@ -5,23 +23,11 @@
     flex-grow: 0;
     font-size: 16.5px;
     font-weight: 600;
-    position: relative;
-    left: 130px;
-    top: 2px;
+    position: absolute;
+    left: 30px;
+    top: 50px;
     font-style: italic;
     color: rgba(75, 243, 111, 0.315);
-}
-
-/* Graphics */
-.logo_head {
-    position: relative;
-    color: rgba(172, 226, 181, 0.719);
-    left: 220px;
-    font-size: 2rem;
-    opacity: 0.6;
-    font-weight: 1000;
-    margin: auto;
-    font-style: oblique;
 }
 
 .logo_head::before,

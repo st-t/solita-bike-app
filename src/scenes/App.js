@@ -19,7 +19,7 @@ const Header = ({sqlStatus, sqlConnected}) =>
     const {position: { client },} = useMightyMouse(true, 'trackElement');
 
     return (
-        <>
+        <div className={anims.header_wrap}>
             <h1 data-cy="logo_head" className={anims.logo_head} data-text="City-bike-app">City-bike-app</h1>
             <small className={anims.sig}>Dev Academy pre-assignment ~ Samuli Taskila</small>
 
@@ -36,7 +36,7 @@ const Header = ({sqlStatus, sqlConnected}) =>
             </div>
 
             <small className={`${sqlConnected === false ? styles.sql_status : styles.none} `}>{sqlStatus}</small>
-        </>
+        </div>
     );
 }
 
