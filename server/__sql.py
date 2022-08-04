@@ -3,6 +3,7 @@
     MySQL functions
 """
 
+import os
 import json
 import codecs
 import pymysql
@@ -111,6 +112,8 @@ def scrape_stations(console_log=False, socket=None, sid=None):
 
     - description : reads stations file and inserts data to database
 
+    - notes : run only once with empty tables
+
     associated files (hardcoded since reading custom datasets goes beyond the purpose of this app) :
     'server/datasets/datasets/Helsingin_ja_Espoon_kaupunkipyöräasemat_avoin.csv'
 
@@ -134,19 +137,14 @@ def scrape_stations(console_log=False, socket=None, sid=None):
         query = "SELECT * FROM `city_languages`;"
         languages = exec_query(query, [])
 
-    # Empty the table(s) before performing data import
-    # Will throw an error if table is already empty so just pass that 
-    try:
-        query = "TRUNCATE TABLE `city_stations`;"
-        exec_query(query, [])
-
-        query = "TRUNCATE TABLE `city_translations`;"
-        exec_query(query, [])
-    except: pass
-
     i = 0
+    folder = ''
     station_names = []
-    file = 'datasets/Helsingin_ja_Espoon_kaupunkipyöräasemat_avoin.csv'
+
+    prod = os.getenv('PRODUCTION')
+    if not prod: folder = 'datasets/'
+
+    file = '{}Helsingin_ja_Espoon_kaupunkipyöräasemat_avoin.csv'.format(folder)
 
     # Open with codecs to get special characters correct
     # Insert stations first since we have auto_increment 
@@ -332,7 +330,7 @@ def scrape_journeys(console_log=False, socket=None, sid=None):
     reads journey dataset(s), filters and inserts data to database
     this function will take a few minutes to execute (around 3 million rows & 3 files)
 
-    - notes:
+    - notes : run only once with empty tables
     associated files (hardcoded since reading custom datasets goes beyond the purpose of this app) :
     'server/datasets/datasets/2021-05.csv'
     'server/datasets/datasets/2021-06.csv'
@@ -342,12 +340,6 @@ def scrape_journeys(console_log=False, socket=None, sid=None):
 
     - return : none
     """
-
-    # Empty the table before performing data import
-    try:
-        query = "TRUNCATE TABLE `city_journeys`;"
-        exec_query(query, [])
-    except: pass
 
     # Fetch stations array as we need the IDs for validating
     query = "SELECT s.id, t.name FROM `city_stations` s LEFT JOIN `city_translations` t ON s.id=t.stationID WHERE t.languageID=1;"
@@ -361,12 +353,16 @@ def scrape_journeys(console_log=False, socket=None, sid=None):
 
     i = 1
     queries = 0
+    folder = ''
+
+    prod = os.getenv('PRODUCTION')
+    if not prod: folder = 'datasets/'
 
     # Datasets 
     files = [
-        'datasets/2021-05.csv',
-        'datasets/2021-06.csv',
-        'datasets/2021-07.csv'
+        '{}2021-05.csv'.format(folder),
+        '{}2021-06.csv'.format(folder),
+        '{}2021-07.csv'.format(folder)
     ]
 
     # Loop all files

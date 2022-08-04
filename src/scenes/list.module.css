@@ -453,7 +453,14 @@
 @media screen and (max-width:420px) {
     .entry_visible {
         left: 00%;
-        width: 57vw;
+        width: 66vw;
+    }
+}
+
+@media screen and (max-width:400px) {
+    .entry_visible {
+        left: 00%;
+        width: 66vw;
     }
 }
 

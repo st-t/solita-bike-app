@@ -3,7 +3,6 @@
     Backend core
 """
 
-import os
 from logging import exception
 from multiprocessing.sharedctypes import Value
 import __sql as db
@@ -358,30 +357,36 @@ def handle_message(data):
             x = {"list_stations":{}}
 
             # Loop all results
-            for row in results:
+            try:
+                for row in results:
+                    
+                    i += 1
+                    total += 1
+                    idx = row[0]
+
+                    # Append data into json array
+                    x["list_stations"][total] = {
+                        "id": idx,
+                        "name": row[1],
+                        "x": row[2],
+                        "y": row[3]
+                    }
+
+                    # Echo data chunk to client
+                    if i == 100:
+                        respond_to_client(socketio, x, request.sid)
+
+                        i = 0
+                        x = {"list_stations":{}}
                 
-                i += 1
-                total += 1
-                idx = row[0]
-
-                # Append data into json array
-                x["list_stations"][total] = {
-                    "id": idx,
-                    "name": row[1],
-                    "x": row[2],
-                    "y": row[3]
-                }
-
-                # Echo data chunk to client
-                if i == 100:
+                # Send the rest, if there's something left
+                if i:
                     respond_to_client(socketio, x, request.sid)
 
-                    i = 0
-                    x = {"list_stations":{}}
-            
-            # Send the rest, if there's something left
-            if i:
-                respond_to_client(socketio, x, request.sid)
+            except:
+                r = {"null": '404'}
+                respond_to_client(socketio, r, request.sid)
+                return
 
             r = {"done": {}}
             respond_to_client(socketio, r, request.sid)
@@ -493,47 +498,53 @@ def handle_message(data):
             x = {"stations":{}}
 
             # Loop all results
-            for row in results:
+            try: 
+                for row in results:
 
-                total += 1
+                    total += 1
 
-                # Logic for pagescrolling
-                if not last_page:
-                    if(scrolled > 1) and (total <= (entries - show_entries)): 
-                        continue
-                else: 
-                    if(scrolled > 1) and (total > (entries - ((show_entries * scrolled) - show_entries ))): 
-                        continue
+                    # Logic for pagescrolling
+                    if not last_page:
+                        if(scrolled > 1) and (total <= (entries - show_entries)): 
+                            continue
+                    else: 
+                        if(scrolled > 1) and (total > (entries - ((show_entries * scrolled) - show_entries ))): 
+                            continue
 
-                i += 1
-                idx = row[0]
+                    i += 1
+                    idx = row[0]
 
-                # Send client first rowID since they need it on some pagination functions
-                if first_id == -1 and not previous: 
-                    first_id = idx
-                    r = {"first": first_id}
-                    respond_to_client(socketio, r, request.sid)
-                else: 
-                    first_id = idx
+                    # Send client first rowID since they need it on some pagination functions
+                    if first_id == -1 and not previous: 
+                        first_id = idx
+                        r = {"first": first_id}
+                        respond_to_client(socketio, r, request.sid)
+                    else: 
+                        first_id = idx
 
-                # Append data into json array
-                x["stations"][total] = {
-                    "station": row[1],
-                    "long": row[2],
-                    "lat": row[3],
-                    "id": idx
-                }
+                    # Append data into json array
+                    x["stations"][total] = {
+                        "station": row[1],
+                        "long": row[2],
+                        "lat": row[3],
+                        "id": idx
+                    }
 
-                # Echo data chunk to client
-                if i == 100:
+                    # Echo data chunk to client
+                    if i == 100:
+                        respond_to_client(socketio, x, request.sid)
+
+                        i = 0
+                        x = {"stations":{}}
+                
+                # Send the rest, if there's something left
+                if i:
                     respond_to_client(socketio, x, request.sid)
 
-                    i = 0
-                    x = {"stations":{}}
-            
-            # Send the rest, if there's something left
-            if i:
-                respond_to_client(socketio, x, request.sid)
+            except:
+                r = {"null": '404'}
+                respond_to_client(socketio, r, request.sid)
+                return
 
             # Client is going to a previous page, they need some data
             if previous:
@@ -653,7 +664,7 @@ def handle_message(data):
 
             if not last_page:
 
-                query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure, s.x, s.y, sr.x, sr.y, s.id, sr.id " \
+                query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure, s.x, s.y, sr.x, sr.y, s.id, sr.id, j.return_station " \
                         "FROM `city_journeys` j " \
                         "LEFT JOIN `city_translations` t " \
                         "ON t.stationID = j.departure_station AND t.languageID=1 " \
@@ -674,7 +685,7 @@ def handle_message(data):
                 # Client wants to see the last page which becomes a bit funky 
                 query = "SELECT * " \
                         "FROM ( " \
-                            "SELECT j.id, t.name, tr.name AS ret, j.distance, j.duration, j.departure, s.x, s.y, sr.x AS ret_x, sr.y AS ret_y, s.id AS s_id, sr.id AS ret_id " \
+                            "SELECT j.id, t.name, tr.name AS ret, j.distance, j.duration, j.departure, s.x, s.y, sr.x AS ret_x, sr.y AS ret_y, s.id AS s_id, sr.id AS ret_id, j.return_station " \
                             "FROM `city_journeys` j " \
                             "LEFT JOIN `city_translations` t " \
                             "ON t.stationID = j.departure_station AND t.languageID=1 " \
@@ -709,55 +720,61 @@ def handle_message(data):
             x = {"journeys":{}}
 
             # Loop all results
-            for row in results:
+            try: 
+                for row in results:
 
-                total += 1
+                    total += 1
 
-                # Logic for pagescrolling
-                if not last_page:
-                    if(scrolled > 1) and (total <= (entries - show_entries)): 
-                        continue
-                else: 
-                    if(scrolled > 1) and (total > (entries - ((show_entries * scrolled) - show_entries ))): 
-                        continue
+                    # Logic for pagescrolling
+                    if not last_page:
+                        if(scrolled > 1) and (total <= (entries - show_entries)): 
+                            continue
+                    else: 
+                        if(scrolled > 1) and (total > (entries - ((show_entries * scrolled) - show_entries ))): 
+                            continue
 
-                i += 1
-                idx = row[0]
+                    i += 1
+                    idx = row[0]
 
-                # Send client first rowID since they need it on some pagination functions
-                if first_id == -1 :
-                    first_id = idx
-                    r = {"first": first_id}
-                    respond_to_client(socketio, r, request.sid)
-                else: 
-                    first_id = idx
+                    # Send client first rowID since they need it on some pagination functions
+                    if first_id == -1 :
+                        first_id = idx
+                        r = {"first": first_id}
+                        respond_to_client(socketio, r, request.sid)
+                    else: 
+                        first_id = idx
 
-                # Append data into json array
-                x["journeys"][total] = {
-                    "dstation": row[1],
-                    "rstation": row[2],
-                    "distance": row[3],
-                    "duration": row[4],
-                    "departure": str(row[5]),
-                    "id": idx,
-                    "d_x": row[6],
-                    "d_y": row[7],
-                    "r_x": row[8],
-                    "r_y": row[9],
-                    "d_id": row[10],
-                    "r_id": row[11]
-                }
+                    # Append data into json array
+                    x["journeys"][total] = {
+                        "dstation": row[1],
+                        "rstation": row[2],
+                        "distance": row[3],
+                        "duration": row[4],
+                        "departure": str(row[5]),
+                        "id": idx,
+                        "d_x": row[6],
+                        "d_y": row[7],
+                        "r_x": row[8],
+                        "r_y": row[9],
+                        "d_id": row[10],
+                        "r_id": row[11]
+                    }
 
-                # Echo data chunk to client
-                if i == 100:
+                    # Echo data chunk to client
+                    if i == 100:
+                        respond_to_client(socketio, x, request.sid)
+
+                        i = 0
+                        x = {"journeys":{}}
+
+                # Send the rest, if there's something left
+                if i:
                     respond_to_client(socketio, x, request.sid)
 
-                    i = 0
-                    x = {"journeys":{}}
-
-            # Send the rest, if there's something left
-            if i:
-                respond_to_client(socketio, x, request.sid)
+            except:
+                r = {"null": '404'}
+                respond_to_client(socketio, r, request.sid)
+                return
 
             # Client is going to a previous page, they need some data
             if previous:
@@ -775,11 +792,11 @@ def handle_message(data):
 @app.route('/<path:path>')
 def serve(path):
 
-    path_dir = os.path.abspath("../build")
-    if path != "" and os.path.exists(os.path.join(path_dir, path)):
-        return send_from_directory(os.path.join(path_dir), path)
+    path_dir = db.os.path.abspath("../build")
+    if path != "" and db.os.path.exists(db.os.path.join(path_dir, path)):
+        return send_from_directory(db.os.path.join(path_dir), path)
     else:
-        return send_from_directory(os.path.join(path_dir),'index.html')
+        return send_from_directory(db.os.path.join(path_dir),'index.html')
 
 
 
@@ -793,7 +810,7 @@ def main():
 
     # init 
     # Check if we're running production & Gunicorn 
-    prod = os.getenv('PRODUCTION')
+    prod = db.os.getenv('PRODUCTION')
 
     if not prod:
         port = 5000

@@ -13,9 +13,15 @@ COPY public ./public
 COPY package.json ./
 COPY package-lock.json ./
 
+# Pass hostname into React
+# Create an argument that we'll declare when building the image
+ARG REACT_APP_HOSTNAME
+ENV REACT_APP_HOSTNAME $REACT_APP_HOSTNAME
+
 # Run the frontend build 
 RUN npm install
 RUN npm run build 
+
 
 # Backend => 
 FROM python:3.9 
@@ -42,4 +48,4 @@ ENV PRODUCTION=True
 
 # Run the app
 # Use only 1 worker otherwise we get complications with socketio
-CMD ["gunicorn", "-b", ":5000", "-w", "1", "-k", "gevent", "__init:app", "--threads", "1", "--worker-connections", "1000"]
+CMD ["gunicorn", "-b", ":3000", "-w", "1", "-k", "gevent", "__init:app", "--threads", "1", "--worker-connections", "1000"]
