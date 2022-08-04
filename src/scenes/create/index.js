@@ -476,7 +476,7 @@ export default class index extends Component
         for(let i = 0; i < values.length; i++) 
         {
             all.push(
-                <span className={styles.item} onClick ={() => this.handleDropdown( values[i], type, coords[0][i], coords[1][i], ids[i] )} key={i}>
+                <span className={styles.item} data-cy="dr_dep" onClick ={() => this.handleDropdown( values[i], type, coords[0][i], coords[1][i], ids[i] )} key={i}>
                     <p>{values[i]}</p>
                 </span>
             )
@@ -708,7 +708,7 @@ export default class index extends Component
                     <div className={styles.create_header}>
 
                         <div className={`${serverMessage === true ? styles.server_notify : styles.server_notify_hide} `}>
-                            <p className={`${err_return === true ? styles.server_txt_err : styles.server_txt} `}>
+                            <p data-cy="s_notif" className={`${err_return === true ? styles.server_txt_err : styles.server_txt} `}>
                                 {messageFromServer}
                             </p>
                         </div>
@@ -716,7 +716,8 @@ export default class index extends Component
                         <p className={styles.create_title}>Create new journey</p>
 
                         <div className={styles.journey_list}>
-                            <p onClick = {() => this.handleDeparture()} 
+                            <p data-cy="c_dep"
+                            onClick = {() => this.handleDeparture()} 
                             className={`${expandDeparture === true ? styles.departure_e : styles.departure} `}> Departure 🠓</p>
 
                             {/* Expanded content */}
@@ -761,7 +762,8 @@ export default class index extends Component
                         </div>
 
                         <div className={styles.journey_list}>
-                            <p onClick = {() => this.handleReturn()} 
+                            <p data-cy="c_ret"
+                            onClick = {() => this.handleReturn()} 
                             className={`${expandReturn === true ? styles.departure_e : styles.departure} `}> Return 🠓</p>
 
                             {/* Expanded content */}
@@ -808,28 +810,28 @@ export default class index extends Component
                         <div className={styles.journey_headers_list}>
                             <ul className={styles.set_list}>
                                 <li>From:</li>
-                                <li>{d_station}</li>
+                                <li data-cy="new_j_data">{d_station}</li>
                             </ul>
                             <ul className={styles.set_list}>
                                 <li>To:</li>
-                                <li>{r_station}</li>
+                                <li data-cy="new_j_data">{r_station}</li>
                             </ul>
                             <ul className={styles.set_list}>
                                 <li>Departure:</li>
-                                <li>{depar}</li>
+                                <li data-cy="new_j_data">{depar}</li>
                             </ul>
                             <ul className={styles.set_list}>
                                 <li>Return:</li>
-                                <li>{ret}</li>
+                                <li data-cy="new_j_data">{ret}</li>
                             </ul>
                             <ul className={styles.set_list}>
                                 <li>Distance:</li>
-                                <li>{distance_text}</li>
+                                <li data-cy="new_j_data">{distance_text}</li>
                             </ul>
 
                             <ul className={styles.set_list}>
                                 <li>Duration:</li>
-                                <li>{duration_text}</li>
+                                <li data-cy="new_j_data">{duration_text}</li>
                             </ul>
                         </div>
 
@@ -856,7 +858,8 @@ export default class index extends Component
                             }
                         </div>
 
-                        <button onClick={() => this.queryJourney()} 
+                        <button data-cy="create-j"
+                        onClick={() => this.queryJourney()} 
                         className={`${canCreate === true ? styles.apply : styles.applyDark} `}>Create</button>
 
                         <div className={styles.add_stations}>
@@ -882,14 +885,15 @@ export default class index extends Component
                             
                             <div className={styles.station_name}>
                                 <p className={styles.new_station}>Name</p>
-                                <input type="text" onChange={(e) => {this.handleNewStation(e, 1)}} className={styles.input_station} value={station_name} />
+                                <input data-cy="in-name" type="text" onChange={(e) => {this.handleNewStation(e, 1)}} className={styles.input_station} value={station_name} />
                                 <p className={styles.new_station}>Address</p>
-                                <input type="text" onChange={(e) => {this.handleNewStation(e, 2)}} className={styles.input_station} value={station_address} />
+                                <input data-cy="in-addr" type="text" onChange={(e) => {this.handleNewStation(e, 2)}} className={styles.input_station} value={station_address} />
                                 <p className={styles.new_station}>City</p>
-                                <input type="text" onChange={(e) => {this.handleNewStation(e, 3)}} className={styles.input_station} value={station_city} />
+                                <input data-cy="in-city" type="text" onChange={(e) => {this.handleNewStation(e, 3)}} className={styles.input_station} value={station_city} />
                                 
                                 <div className={styles.create_wrap}>
-                                    <button onClick={() => this.queryStation()} 
+                                    <button data-cy="create-j2"
+                                    onClick={() => this.queryStation()} 
                                     className={`${canCreateStation === true ? styles.apply : styles.applyDark} `}>Create</button>
                                 </div>
 
