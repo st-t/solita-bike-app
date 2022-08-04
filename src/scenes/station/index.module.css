@@ -62,18 +62,6 @@
     border-radius: 15px;
     opacity: 1;
     transition: 2.3s;
-
-    /* I don't like it 
-    border-color: rgba(93, 221, 76, 0.616);
-    border-style: inset;
-    animation: shadow 6s infinite;
-    */
-}
-
-@keyframes shadow {
-    50% {
-        box-shadow: 0 2px 45px #2270226c;
-    }
 }
 
 .station_stats_title {
@@ -214,7 +202,6 @@
     cursor: normal;
 }
 
-
 .checkbox {
     position: absolute;
     opacity: 0;
@@ -334,6 +321,7 @@
 
 .stats_wrap {
     padding: 30px;
+    padding-right: 50px;
 }
 
 .stats_list {
