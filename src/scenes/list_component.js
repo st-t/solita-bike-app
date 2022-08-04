@@ -508,7 +508,7 @@ export default class NewList extends Component {
                 <li className={styles.entry} key={columnNum}>
                     {
                         renderLink === true 
-                        ? <Link className={styles.station_link} to={stationLink}>{string}<p>{headers[hIndex]}</p></Link> 
+                        ? <Link data-cy="s_link" className={styles.station_link} to={stationLink}>{string}<p>{headers[hIndex]}</p></Link> 
                         : <>{string}<p>{headers[hIndex]}</p></>
                     }
                 </li>

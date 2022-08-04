@@ -466,7 +466,7 @@ class Station extends Component
 
             return (
                 <li key={index}>
-                    <Link onClick={() => this.applyFilters(true)} className={styles.station_link} to={stationLink}>
+                    <Link data-cy="s_top_rlink" onClick={() => this.applyFilters(true)} className={styles.station_link} to={stationLink}>
                         {string} <p>({counts[index]} journeys)</p>
                     </Link> 
                 </li>
@@ -495,7 +495,7 @@ class Station extends Component
 
             return (
                 <li key={index}>
-                    <Link onClick={() => this.applyFilters(true)} className={styles.station_link} to={stationLink}>
+                    <Link data-cy="s_top_dlink" onClick={() => this.applyFilters(true)} className={styles.station_link} to={stationLink}>
                         {string} <p>({counts[index]} journeys)</p>
                     </Link> 
                 </li>
@@ -548,6 +548,7 @@ class Station extends Component
                         {/* When user clicks cogwheel => expand it <DateFormat />*/}
                         <div>
                             <FontAwesomeIcon 
+                            data-cy="cog_s"
                             onClick = {() => this.handleFiltersExpansion()} 
                             className={`${expandFilters === true ? styles.icon_filters_open : styles.icon_filters} `} icon={faCogs} size="2x" />
                         </div>
@@ -563,6 +564,7 @@ class Station extends Component
                                         <ul>
                                             <li>
                                                 <input 
+                                                data-cy="datef"
                                                 className={styles.checkbox} 
                                                 onChange={this.handleChecked} 
                                                 name="filtersChecked" 
@@ -576,7 +578,7 @@ class Station extends Component
                                             <li></li>
 
                                             <li>
-                                                <button onClick={() => this.applyFilters()} className={`${needApply === true ? styles.f_apply : styles.f_applyDark} `}>Apply</button>
+                                                <button data-cy="applyf" onClick={() => this.applyFilters()} className={`${needApply === true ? styles.f_apply : styles.f_applyDark} `}>Apply</button>
                                             </li>
 
                                         </ul>
@@ -603,22 +605,22 @@ class Station extends Component
 
                             <ul className={styles.stats_list}>
                                 <li><p>Journeys to this station</p></li>
-                                <li><p>{journeys_to}</p></li>
+                                <li><p data-cy="s_stat">{journeys_to}</p></li>
                             </ul>
 
                             <ul className={styles.stats_list}>
                                 <li><p>Journeys from this station</p></li>
-                                <li><p>{journeys_from}</p></li>
+                                <li><p data-cy="s_stat">{journeys_from}</p></li>
                             </ul>
 
                             <ul className={styles.stats_list}>
                                 <li><p>Average distance traveled to this station</p></li>
-                                <li><p>{distance_to}</p></li>
+                                <li><p data-cy="s_stat">{distance_to}</p></li>
                             </ul>
 
                             <ul className={styles.stats_list}>
                                 <li><p>Average distance traveled from this station</p></li>
-                                <li><p>{distance_from}</p></li>
+                                <li><p data-cy="s_stat">{distance_from}</p></li>
                             </ul>
 
                             <p className={styles.list_head}>Most popular return stations starting here:</p>

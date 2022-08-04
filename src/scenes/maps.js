@@ -317,7 +317,7 @@ class GoogleMaps extends Component
 
         return (
             <div className={styles.maps_outer}>
-                <div className={styles.maps}>
+                <div className={styles.maps} data-cy="map-marker">
                     <GoogleMapReact
                         bootstrapURLKeys={{key: "AIzaSyDVxd62MyhKyEmEIqvsv3R9cPKw6pX5H58"}}
                         defaultCenter={{ lat: 60.16582, lng: 24.840319 }}
