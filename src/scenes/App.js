@@ -166,7 +166,11 @@ export default class App extends Component
                     <Fragment>
 
                         {/* This (navbar) is always visible */}
-                        <div className={styles.header_links}>
+                        <div className={`${
+                            this.state.isLoaded === false 
+                            ? this.state.sqlConnected 
+                            ? styles.none : styles.header_links : styles.header_links} `}>
+                                
                             <li className={styles.navitem}>
                                 <Link to="/" className={styles.navlink} >Journeys</Link>
                                 <Link to="/stations" className={styles.navlink} >Stations</Link>

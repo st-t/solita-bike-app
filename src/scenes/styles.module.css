@@ -58,6 +58,9 @@
     .header_links {
         display: none;
     }
+    .sql_status {
+        font-size: 25px;
+    }
 }
 
 .navlink {
