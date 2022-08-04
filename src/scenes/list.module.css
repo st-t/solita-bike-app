@@ -356,10 +356,10 @@
     }
     
     .searchWrap {
-        width: 35%;
-        left: 80%;
-        position: absolute;
-        padding-bottom: 30px;
+        width: 55%;
+        left: 45%;
+        position: relative;
+        padding-bottom: 10px;
     }
 
     .list {

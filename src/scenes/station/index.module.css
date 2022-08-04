@@ -30,7 +30,7 @@
 .station_header {
     position: relative;
     margin: auto;
-    width: 60%;
+    width: 80%;
     height: 400px;
     padding-bottom: 40px;
 }
@@ -58,7 +58,7 @@
     position: relative;
     top: 40px;
     margin: auto;
-    width: 70%;
+    width: 90%;
     border-radius: 15px;
     opacity: 1;
     transition: 2.3s;
@@ -80,10 +80,6 @@
     text-transform: uppercase;
     font-weight: 800;
     color: rgba(221, 221, 221, 0.623);
-}
-
-.stats_wrap {
-    padding: 30px;
 }
 
 /* Filters */
@@ -123,6 +119,7 @@
 }
 
 .filters_hidden {
+    display: none;
     position: relative;
     left: 0;
     opacity: 0;
@@ -335,18 +332,22 @@
     color: rgba(221, 221, 221, 0.623);
 }
 
+.stats_wrap {
+    padding: 30px;
+}
+
 .stats_list {
     display: flex;
     list-style: none;
     flex-direction: row;
     margin: auto;
     border-radius: 20px;
+    width: 100%;
 }
 
 .stats_list li {
     width: 100%;
-    padding-right: 4px;
-    text-align: center;
+    text-align: left;
 }
 
 .stats_list:nth-child(odd) {
@@ -368,7 +369,7 @@
 }
 
 .stats_wrap ol li {
-    min-width: 90%;
+    min-width: 100%;
 }
 
 .stats_wrap ol li p {

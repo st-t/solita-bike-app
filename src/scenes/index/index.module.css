@@ -18,11 +18,15 @@
 }
 
 .icon_filters {
+    padding-left: 20px;
+    padding-top: 30px;
     color: rgba(255, 255, 255, 0.404);
     transition: 0.2s;
 }
 
 .icon_filters_open {
+    padding-left: 20px;
+    padding-top: 30px;
     color: rgba(12, 206, 22, 0.849);
     transition: 0.2s;
     cursor: pointer;
@@ -61,6 +65,7 @@
 }
 
 .filters_hidden {
+    display: none;
     opacity: 0;
     position: relative;
     margin-bottom: 0px;
@@ -89,8 +94,8 @@
     display:table;
     margin:auto;
     padding-top: 2%;
-    left: 2%;
     width: 90%;
+    max-width: 100%;
     position: relative;
     word-break: initial;
     text-overflow: ellipsis;
