@@ -416,9 +416,18 @@
     padding-top: 50px;
 }
 
+
+@media screen and (max-width:1014px) {
+
+    .station_map {
+        width: 100%;
+    }
+    
+}
+
 @media screen and (max-width:930px) {
     .create_header {
-        width: 90%;
+        width: 95%;
     }
 
     .journey_headers_list { 

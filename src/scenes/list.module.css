@@ -341,6 +341,7 @@
     
     .entry_visible {
         padding-top: 2px;
+        width: 81vw;
     }
 
     .list .list_header {
@@ -363,7 +364,7 @@
     }
 
     .list {
-        width: 90%;
+        width: 100%;
     }
 
     .list ul {
@@ -424,27 +425,28 @@
 @media screen and (max-width:930px) {
     .entry_visible {
         left: 15%;
+        width: 82vw;
     }
 }
 
-@media screen and (max-width:740px) {
+@media screen and (max-width:840px) {
     .entry_visible {
-        left: 150%;
-        width: 60vw;
+        left: 0%;
+        width: 77vw;
     }
 }
 
 @media screen and (max-width:660px) {
     .entry_visible {
-        left: 40%;
-        width: 59vw;
+        right: -3%;
+        width: 72vw;
     }
 }
 
 @media screen and (max-width:540px) {
     .entry_visible {
-        left: 10%;
-        width: 60vw;
+        left: 0%;
+        width: 67vw;
     }
 }
 

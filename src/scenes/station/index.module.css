@@ -370,6 +370,14 @@
 
 @media screen and (max-width:1014px) {
 
+    .station_map {
+        width: 100%;
+    }
+    
+    .station_header {
+        width: 95%;
+    }
+    
     .stats_wrap ol li p {
         padding-bottom: 20px;
         width: 100%;
