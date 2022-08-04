@@ -407,6 +407,7 @@ export default class NewList extends Component {
             
             return (
                 <ul key={idx + index}
+                    data-cy = "expand"
                     id = {column_data[0][idx + index]} 
                     onClick = { () => this.handleColumnExpansion(column_data[0][idx + index], (idx + index)) + 
                     expandedColumns.push((idx + index))}
@@ -432,6 +433,7 @@ export default class NewList extends Component {
                                         coord_index={(idx+index)}
                                         isJourney={linkStations}
                                         changeProps = {this.props.changeProps} 
+                                        sqlConnected = {this.props.data.sqlConnected}
                                     />
                                 }
                             </div>
@@ -819,7 +821,7 @@ export default class NewList extends Component {
                         <div className={styles.searchWrap}>
                             <div className={styles.search}>
 
-                                <input type="text" 
+                                <input type="text" data-cy="srch"
                                 onKeyDown={this.handleSearchInput.bind(this)} 
                                 onChange={this.handleSearchInput.bind(this)} 
                                 className={styles.searchTerm} placeholder="search" />
@@ -848,12 +850,12 @@ export default class NewList extends Component {
                     </li>
                     <li>
                         <FontAwesomeIcon className={`${scrolledPage === 0 ? styles.pageSkipDeactivated : styles.pageScroller} `}
-                        icon={faAngleLeft} size="xs" onClick = { () => this.previousPages(false) } />
+                        data-cy="prev" icon={faAngleLeft} size="xs" onClick = { () => this.previousPages(false) } />
                     </li>
                     {this.renderPages()}
                     <li>
                         <FontAwesomeIcon className={`${calledLast === true || stopScroll ? styles.pageSkipDeactivated : styles.pageScroller} `}
-                        icon={faAngleRight} size="xs" onClick = { () => this.nextPages(false) } />
+                        data-cy="next" icon={faAngleRight} size="xs" onClick = { () => this.nextPages(false) } />
                     </li>
                     <li>
                         <FontAwesomeIcon className={`${calledLast === true || stopScroll ? styles.pageSkipDeactivated : styles.pageSkip} `}

@@ -20,7 +20,7 @@ const Header = ({sqlStatus, sqlConnected}) =>
 
     return (
         <>
-            <h1 className={anims.logo_head} data-text="City-bike-app">City-bike-app</h1>
+            <h1 data-cy="logo_head" className={anims.logo_head} data-text="City-bike-app">City-bike-app</h1>
             <small className={anims.sig}>Dev Academy pre-assignment ~ Samuli Taskila</small>
 
             <div className={anims.header_anim} id="trackElement">

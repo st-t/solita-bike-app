@@ -212,7 +212,6 @@ export default class index extends Component
             search: search
         };
 
-        console.log('entries: %i', fetchEntriesAmount);
         this.setState( {filters: obj}, this.serverRequest );
     }
 

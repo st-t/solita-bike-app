@@ -842,6 +842,7 @@ export default class index extends Component
                                     isJourney={false}
                                     isCreate={true}
                                     mapPreview={false}
+                                    sqlConnected={this.state.sqlConnected}
                                 /> 
                                 : < GoogleMaps 
                                     data = {this.state} 
@@ -849,6 +850,7 @@ export default class index extends Component
                                     isJourney={false}
                                     isCreate={true}
                                     mapPreview={true}
+                                    sqlConnected={this.state.sqlConnected}
                                 />
                                 
                             }
@@ -873,6 +875,7 @@ export default class index extends Component
                                     isCreate={false}
                                     clickOnCoord={true}
                                     checkNewStation = {this.checkNewStation} 
+                                    sqlConnected={this.state.sqlConnected}
                                 />
 
                             </div>

@@ -3,6 +3,7 @@
     Backend core
 """
 
+import os
 from logging import exception
 from multiprocessing.sharedctypes import Value
 import __sql as db
@@ -770,26 +771,44 @@ def handle_message(data):
 
 
 
-@app.route("/")
-def serve():
-    # Client landed, render the index
-    return send_from_directory(app.static_folder, 'index.html')
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+
+    path_dir = os.path.abspath("../build")
+    if path != "" and os.path.exists(os.path.join(path_dir, path)):
+        return send_from_directory(os.path.join(path_dir), path)
+    else:
+        return send_from_directory(os.path.join(path_dir),'index.html')
+
+
+
+@app.errorhandler(404)   
+def not_found(e):   
+    return app.send_static_file('index.html')
 
 
 
 def main():
 
     # init 
-    port = 5000
-    domain = 'localhost'
+    # Check if we're running production & Gunicorn 
+    prod = os.getenv('PRODUCTION')
 
-    # Create database tables
-    # db.socketio_init(socketio)
+    if not prod:
+        port = 5000
+        domain = 'localhost'
+        print(' [#] __init:', domain, port)
+        socketio.run(app, host=domain, port=port)
 
-    print(' [#] __init:', domain, port)
-    socketio.run(app, host=domain, port=port)
+    print(' [#] __init production', prod)
 
 
 
 if __name__ == '__main__':
     main()
+
+
+
+# Called from docker since __name__ is not __main__
+main()

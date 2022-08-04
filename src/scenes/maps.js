@@ -49,6 +49,8 @@ class GoogleMaps extends Component
     // Map route called from journey list (index page)
     getMapsRoute()
     {
+        if(!this.props.sqlConnected) return; 
+        
         const apiIsLoaded = (map) => 
         {
             const google = window.google;
@@ -95,7 +97,7 @@ class GoogleMaps extends Component
 
         return (
             <div className={styles.maps_outer}>
-                <div className={styles.maps}>
+                <div className={styles.maps} data-cy="map-route">
                     <GoogleMapReact
                         bootstrapURLKeys={{key: "AIzaSyDVxd62MyhKyEmEIqvsv3R9cPKw6pX5H58"}}
                         defaultCenter={{ lat: 60.16582, lng: 24.840319 }}
@@ -114,6 +116,8 @@ class GoogleMaps extends Component
     // (Route between journey stations)
     getCreateMapsRoute()
     {
+        if(!this.props.sqlConnected) return; 
+        
         const apiIsLoaded = (map) => 
         {
             var return_lng = null; // x
@@ -279,6 +283,8 @@ class GoogleMaps extends Component
     // Renders a marker when client is on station view 
     renderMaps(markers=false)
     {
+        if(!this.props.sqlConnected) return; 
+
         let loc;
 
         if(markers) 

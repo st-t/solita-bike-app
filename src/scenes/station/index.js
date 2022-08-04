@@ -534,6 +534,7 @@ class Station extends Component
                                     isJourney={linkStations}
                                     isCreate={isCreate}
                                     changeProps = {this.changeProps} 
+                                    sqlConnected = {this.state.sqlConnected}
                                 />
                             : null}
 
