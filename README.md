@@ -188,7 +188,7 @@ End to end tests automatically test the main functionality of each page of this 
 
 This requires for the app to be running in your system with MySQL configured and datasets imported. 
 
-See instructions above.
+[See instructions above.](#running-the-app)
 
 <br>
 
