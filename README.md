@@ -83,6 +83,7 @@ This can lead to some cors errors with SocketIO (communication from server to cl
 
 Its also not recommended to use extensions such as DarkReader.
 
+<br>
 
 ### Either download the repository use git clone:
 
