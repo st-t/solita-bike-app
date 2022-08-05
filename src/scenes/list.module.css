@@ -342,6 +342,7 @@
     transition: 0.1s;
 }
 
+
 @media screen and (max-width:1316px) {
     .list ul > li {
         padding:.5em 0.75em;
@@ -359,6 +360,24 @@
     }
 }
 
+@media screen and (max-width:1450px) {
+    .pageButtons {
+        list-style: none;
+        display: flex;
+        position: absolute;
+        left: 5%;
+        cursor: pointer;
+    }
+
+    .pageButtonsDown {
+        list-style: none;
+        display: flex;
+        position: absolute;
+        right: 5%;
+        cursor: pointer;
+    }
+}
+
 @media screen and (max-width:1120px) {
     .list {
         width: 95%;
@@ -369,6 +388,22 @@
         left: 84%;
         top: 25px;
         position: absolute;
+    }
+
+    .pageButtons {
+        list-style: none;
+        display: flex;
+        position: absolute;
+        left: 1%;
+        cursor: pointer;
+    }
+
+    .pageButtonsDown {
+        list-style: none;
+        display: flex;
+        position: absolute;
+        right: 1%;
+        cursor: pointer;
     }
 }
 
