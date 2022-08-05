@@ -844,23 +844,30 @@ export default class NewList extends Component {
 
                 {/* Pages */}
                 <ul className={styles.pages}>
-                    <li>
-                        <FontAwesomeIcon className={`${scrolledPage === 0 ? styles.pageSkipDeactivated : styles.pageSkip} `}
-                        data-cy="first" icon={faCaretLeft} size="xs" onClick = { () => this.previousPages(true) } />
-                    </li>
-                    <li>
-                        <FontAwesomeIcon className={`${scrolledPage === 0 ? styles.pageSkipDeactivated : styles.pageScroller} `}
-                        data-cy="prev" icon={faAngleLeft} size="xs" onClick = { () => this.previousPages(false) } />
-                    </li>
+
+                    <ul className={styles.pageButtons}>
+                        <li>
+                            <FontAwesomeIcon className={`${scrolledPage === 0 ? styles.pageSkipDeactivated : styles.pageSkip} `}
+                            data-cy="first" icon={faCaretLeft} size="xs" onClick = { () => this.previousPages(true) } />
+                        </li>
+                        <li>
+                            <FontAwesomeIcon className={`${scrolledPage === 0 ? styles.pageSkipDeactivated : styles.pageScroller} `}
+                            data-cy="prev" icon={faAngleLeft} size="xs" onClick = { () => this.previousPages(false) } />
+                        </li>
+                    </ul>
+
                     {this.renderPages()}
-                    <li>
-                        <FontAwesomeIcon className={`${calledLast === true || stopScroll ? styles.pageSkipDeactivated : styles.pageScroller} `}
-                        data-cy="next" icon={faAngleRight} size="xs" onClick = { () => this.nextPages(false) } />
-                    </li>
-                    <li>
-                        <FontAwesomeIcon className={`${calledLast === true || stopScroll ? styles.pageSkipDeactivated : styles.pageSkip} `}
-                        data-cy="last" icon={faCaretRight} size="xs" onClick = { () => this.nextPages(true) } />
-                    </li>
+
+                    <ul className={styles.pageButtonsDown}>
+                        <li>
+                            <FontAwesomeIcon className={`${calledLast === true || stopScroll ? styles.pageSkipDeactivated : styles.pageScroller} `}
+                            data-cy="next" icon={faAngleRight} size="xs" onClick = { () => this.nextPages(false) } />
+                        </li>
+                        <li>
+                            <FontAwesomeIcon className={`${calledLast === true || stopScroll ? styles.pageSkipDeactivated : styles.pageSkip} `}
+                            data-cy="last" icon={faCaretRight} size="xs" onClick = { () => this.nextPages(true) } />
+                        </li>
+                    </ul>
                 </ul>
             </>
         );

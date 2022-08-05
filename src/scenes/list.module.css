@@ -49,6 +49,46 @@
     scrollbar-width: thin;
 }
 
+.pageButtons {
+    list-style: none;
+    display: flex;
+    position: absolute;
+    left: 15%;
+    cursor: pointer;
+}
+
+.pageButtons li {
+    padding: 5px;
+}
+
+.pageButtonsDown {
+    list-style: none;
+    display: flex;
+    position: absolute;
+    right: 15%;
+    cursor: pointer;
+}
+
+.pageButtons li {
+    padding: 10px;
+}
+
+.pageButtonsDown li {
+    padding: 10px;
+}
+
+.pageActive  {
+    font-size: 55px;
+}
+
+.pageIncrement  {
+    font-size: 40px;
+}
+
+.pageSkipDeactivated, .pageScroller, .pageSkip {
+    transform:scale(1.2);
+}
+
 .pages > li {
     margin-right: 0.3em;
     user-select: none;
@@ -336,9 +376,57 @@
 @media screen and (max-width:1014px) {
 
     .pages {
-        font-size: 30px;
+        right: 30px;
+        font-size: 40px;
+        width: 95%;
+        font-size: 45px;
+        flex-direction: column;
+    }
+
+    .pageButtons {
+        list-style: none;
+        display: flex;
+        position: absolute;
+        left: 5%;
+        cursor: pointer;
+    }
+
+    .pageButtonsDown {
+        list-style: none;
+        display: flex;
+        position: absolute;
+        right: 5%;
+        cursor: pointer;
+    }
+
+    .pageButtons li {
+        padding: 0px;
     }
     
+    .pageButtonsDown li {
+        padding: 0px;
+    }
+
+    .pageSkipDeactivated, .pageScroller, .pageSkip {
+        display: flex;
+        flex-direction: row;
+        transform:scale(1.3);
+        padding: 10px;
+        padding-bottom: 20px;
+    }
+
+    .pageActive  {
+        font-size: 65px;
+    }
+    
+    .pageIncrement  {
+        font-size: 45px;
+    }
+
+    .pages > li {
+        margin-right: 0.2em;
+    }
+
     .entry_visible {
         padding-top: 2px;
         width: 81vw;

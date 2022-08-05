@@ -1,5 +1,7 @@
 import React, { Component, Fragment } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCat } from '@fortawesome/free-solid-svg-icons'; 
 
 import Loader from './loader/index';
 import Index from './index/index';
@@ -61,8 +63,27 @@ const MobileNavLinks = () =>
                     <li><Link to="/stations" className={styles.mobileLink}>Stations</Link></li>
                     <li><Link to="/settings" className={styles.mobileLink}>Settings</Link></li>
                     <li><Link to="/create" className={styles.mobileLink}>Add New</Link></li>
+
+                    <li></li>
+                    <li>
+                        <a href="https://github.com/st-t/solita-bike-app/" target="_blank" className={styles.gitLink}>
+                            Github
+                        </a>
+                    </li>
                 </ul>
             </div> 
+        </div>
+    );
+}
+
+
+const Footer = () => 
+{
+    return (
+        <div className={styles.footer}>
+            <a href="https://github.com/st-t/solita-bike-app/" target="_blank" className={styles.gitLink}>
+                <FontAwesomeIcon className={styles.faicon} icon={faCat} size="2x" /><p className={styles.git}> Github</p>
+            </a>
         </div>
     );
 }
@@ -152,7 +173,6 @@ export default class App extends Component
             <>
                 {/* If we need to load something before we can display the page
                     => use this loading screen                      */}
-                
                 {!this.state.isLoaded 
                 ? this.state.sqlConnected ? <Loader /> : null 
                 : null}
@@ -170,7 +190,7 @@ export default class App extends Component
                             this.state.isLoaded === false 
                             ? this.state.sqlConnected 
                             ? styles.none : styles.header_links : styles.header_links} `}>
-                                
+
                             <li className={styles.navitem}>
                                 <Link to="/" className={styles.navlink} >Journeys</Link>
                                 <Link to="/stations" className={styles.navlink} >Stations</Link>
@@ -222,6 +242,8 @@ export default class App extends Component
                         </Routes>
                     </Fragment>
                 </Router>
+                
+                {this.state.isLoaded ? <Footer /> : null }
             </>
         )
     }

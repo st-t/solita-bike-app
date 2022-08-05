@@ -1,10 +1,12 @@
 // solita-bike-app
 // End to end tests - Stations 
+// Execute with MySQL configured and datasets loaded
 
 describe("E2E - stations [with datasets]", () => 
 {
     const queryTimeout = 7000;
 
+    // Load the page before running the test
     before( () => {
         cy.viewport(1120, 1000);
 
@@ -20,12 +22,15 @@ describe("E2E - stations [with datasets]", () =>
     {
         it("should load " + arr_pref[i] + " page", () => {
             cy.viewport(1120, 1000);
-
+            
+            // Wait for the page to load 
             cy.get('[data-cy="srch"]', { timeout: queryTimeout }).should('be.visible');
-
+            
+            // Page button should be available
             cy.get('[data-cy="'+arr_pages[i]+'"]', { timeout: queryTimeout })
             .should('have.css', 'color').and('eq', 'rgb(100, 100, 100)');
 
+            // Click it, wait for the page to load and check that there's no error 
             cy.get('[data-cy="'+arr_pages[i]+'"]').click();
             cy.get('[data-cy="srch"]', { timeout: queryTimeout }).should('be.visible');
             cy.get('[data-cy="expand"]', { timeout: queryTimeout }).should('be.visible');
@@ -59,11 +64,14 @@ describe("E2E - stations [with datasets]", () =>
     it("should load previous page after last page", () => {
         cy.viewport(1120, 1000);
 
+        // Wait for the page to load 
         cy.get('[data-cy="srch"]', { timeout: queryTimeout }).should('be.visible');
-
+        
+        // Previous button should be there 
         cy.get('[data-cy="prev"]', { timeout: queryTimeout })
         .should('have.css', 'color').and('eq', 'rgb(100, 100, 100)');
 
+        // Click it, wait for the page to load and check that there's no error 
         cy.get('[data-cy="prev"]').click();
         cy.get('[data-cy="srch"]', { timeout: queryTimeout }).should('be.visible');
         cy.get('[data-cy="expand"]', { timeout: queryTimeout }).should('be.visible');
@@ -107,9 +115,11 @@ describe("E2E - stations [with datasets]", () =>
         cy.get('[data-cy="no_res"]').should('not.exist');
     });
 
+    // Check that search works
     it("should find searched term", () => {
         cy.viewport(1120, 1000);
-
+        
+        // Search for a station that should be there after dataset import 
         cy.get('[data-cy="srch"]', { timeout: queryTimeout }).should('be.visible').type('pasila{enter}');
         cy.contains('Pasilan asema', { timeout: queryTimeout });
     });
