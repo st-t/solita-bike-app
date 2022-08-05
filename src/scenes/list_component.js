@@ -845,7 +845,7 @@ export default class NewList extends Component {
                 {/* Pages */}
                 <ul className={styles.pages}>
 
-                    <ul className={styles.pageButtons}>
+                <ul className={`${displayFilters ? styles.pageButtons : styles.pageButtonsNoBorder} `}>
                         <li>
                             <FontAwesomeIcon className={`${scrolledPage === 0 ? styles.pageSkipDeactivated : styles.pageSkip} `}
                             data-cy="first" icon={faCaretLeft} size="xs" onClick = { () => this.previousPages(true) } />
@@ -858,7 +858,7 @@ export default class NewList extends Component {
 
                     {this.renderPages()}
 
-                    <ul className={styles.pageButtonsDown}>
+                    <ul className={`${displayFilters ? styles.pageButtonsDown : styles.pageButtonsDownNoBorder} `}>
                         <li>
                             <FontAwesomeIcon className={`${calledLast === true || stopScroll ? styles.pageSkipDeactivated : styles.pageScroller} `}
                             data-cy="next" icon={faAngleRight} size="xs" onClick = { () => this.nextPages(false) } />

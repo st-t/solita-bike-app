@@ -55,6 +55,20 @@
     position: absolute;
     left: 15%;
     cursor: pointer;
+
+    padding: 5px;
+    border: 1px solid #dbdbdb1c;
+    border-radius: 125px 5px 25px 125px;
+    box-shadow: 0px 5px 5px 0px rgba(170, 170, 170, 0.164);
+    transition: 0.3s;
+}
+
+.pageButtonsNoBorder {
+    list-style: none;
+    display: flex;
+    position: absolute;
+    left: 15%;
+    cursor: pointer;
 }
 
 .pageButtons li {
@@ -67,6 +81,21 @@
     position: absolute;
     right: 15%;
     cursor: pointer;
+
+    padding: 5px;
+    border: 1px solid #dbdbdb1c;
+    border-radius: 5px 125px 125px 25px;
+    box-shadow: 0px 5px 5px 0px rgba(170, 170, 170, 0.164);
+    transition: 0.3s;
+}
+
+.pageButtonsDownNoBorder {
+    list-style: none;
+    display: flex;
+    position: absolute;
+    right: 15%;
+    cursor: pointer;
+
 }
 
 .pageButtons li {
@@ -230,26 +259,6 @@
     padding: 10px;
     padding-top: 20px;
     margin-bottom: 100px;
-    animation: fadeIn ease 3s;
-    -webkit-animation: fadeIn ease 3s;
-    -moz-animation: fadeIn ease 3s;
-    -o-animation: fadeIn ease 3s;
-    -ms-animation: fadeIn ease 3s;
-    transition: 2.4s;
-}
-
-.entry_content_r {
-    float: right;
-    width: 330px;
-    height: 340px;
-    left: 20px;
-    margin-bottom: 100px;
-    padding: 10px;
-    padding-top: 20px;
-
-    border-color: violet;
-    border-style: dotted;
-
     animation: fadeIn ease 3s;
     -webkit-animation: fadeIn ease 3s;
     -moz-animation: fadeIn ease 3s;
