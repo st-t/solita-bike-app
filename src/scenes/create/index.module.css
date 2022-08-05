@@ -481,6 +481,10 @@
     .station_map {
         width: 100%;
     }
+
+    .journey_list {
+        width: 200%;
+    }
 }
 
 @media screen and (max-width:930px) {
