@@ -685,7 +685,7 @@ def handle_message(data):
                 # Client wants to see the last page which becomes a bit funky 
                 query = "SELECT * " \
                         "FROM ( " \
-                            "SELECT j.id, t.name, tr.name AS ret, j.distance, j.duration, j.departure, s.x, s.y, sr.x AS ret_x, sr.y AS ret_y, s.id AS s_id, sr.id AS ret_id, j.return_station " \
+                            "SELECT j.id, t.name, tr.name AS ret, j.distance, j.duration, j.departure, s.x, s.y, sr.x AS ret_x, sr.y AS ret_y, s.id AS s_id, sr.id AS ret_id, j.return_station, j.departure_station " \
                             "FROM `city_journeys` j " \
                             "LEFT JOIN `city_translations` t " \
                             "ON t.stationID = j.departure_station AND t.languageID=1 " \
