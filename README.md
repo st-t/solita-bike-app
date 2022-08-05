@@ -60,6 +60,7 @@ Back-to-front communication happens through SocketIO and we will be using a MySQ
 - Language support for future development 
    - Database structure built to support many languages 
 
+<br>
 
 ## Requirements 
 
