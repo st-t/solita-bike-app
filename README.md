@@ -1,70 +1,281 @@
-# Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# solita-bike-app
+This is the pre-assignment for Solita Dev Academy Finland fall 2022
 
-## Available Scripts
+https://github.com/solita/dev-academy-2022-fall-exercise
 
-In the project directory, you can run:
 
-### `npm start`
+### Chosen webstack 
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+This app runs on Python-Flask backend giving the powerful tools of pip with your one and only React.js as frontend to assure smooth sailing.
+Back-to-front communication happens through SocketIO and we will be using a MySQL database for handling all the data. 
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
 
-### `npm test`
+## Features
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Automatic dataset imports 
+   - Does not import journeys under 10 seconds 
+   - Does not import journeys under 10 meters 
+   - Does not import journeys with same return and departure stations 
+   - Does not import journeys with invalid/unknown station 
 
-### `npm run build`
+- Journeys list 
+   - Full-fletched pagination 
+   - Departure and return stations, distance and duration
+   - Map route display on column click 
+   - Loads target station data on click 
+   - Ordering per column (departure/return/distance/duration)
+   - Filtering journeys 
+   - Searching 
+  
+- All stations list 
+   - Full-fletched pagination 
+   - Searching 
+   - Loads target station data on click 
+  
+- Single station view
+   - Location on map
+   - Name, address and city (if available)
+   - Journey statistics (amount of journeys, avg distances)
+   - Top popular return / departure stations  
+   - Filtering results by any timerange
+  
+- Adding new journeys
+   - Search and set departure & return stations 
+   - Automatic duration and distance calculations 
+   - Map route display 
+  
+- Adding new stations
+   - Able to choose station location from the map 
+  
+- Mobile version
+   - Not the greatest but definitely not the worst 
+  
+- Docker support 
+   - You may run the app in any operating system that has Docker 
+  
+- E2E tests
+   - Run automatic tests to test the whole application
+  
+- Language support for future development 
+   - Database structure built to support many languages 
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Requirements 
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- Python3 
+- Node.js and NPM
+- MySQL database
 
-### `npm run eject`
+### Optional:
+  
+- Git 
+- Docker 
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+<br>
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Running the app
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+NOTE: Please disable any adblock extensions before running this application.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+This can lead to some cors errors with SocketIO (communication from server to client). 
 
-## Learn More
+Its also not recommended to use extensions such as DarkReader.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Either download the repository use git clone:
 
-### Code Splitting
+```
+git clone https://github.com/st-t/solita-bike-app
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```
 
-### Analyzing the Bundle Size
+### Download the datasets:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+https://dev.hsl.fi/citybikes/od-trips-2021/2021-05.csv
 
-### Making a Progressive Web App
+https://dev.hsl.fi/citybikes/od-trips-2021/2021-06.csv
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+https://dev.hsl.fi/citybikes/od-trips-2021/2021-07.csv
 
-### Advanced Configuration
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### Place datasets in solita-bike-app\server\datasets 
 
-### Deployment
+<br>
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## Running the app in Docker ( Windows/Linux/Mac[...] )
 
-### `npm run build` fails to minify
+### Make sure Docker is successfully installed in your system.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Execute following commands in terminal: 
+
+```
+cd solita-bike-app
+
+docker build --build-arg REACT_APP_HOSTNAME='localhost:3000' -t solita-bike-app . 
+
+docker run --rm --memory=500m -p 3000:3000 solita-bike-app
+
+```
+
+### And that's it. 
+
+The app will run on http://localhost:3000/ which you may open up in browser.
+
+We are adding some memory as extra Docker argument to be able to handle dataset imoprts.
+
+<br>
+
+## Running the app with Python & npm (Windows only) 
+
+### Run:
+
+`cd solita-bike-app` - Navigates into root directory 
+
+`npm install`  		- Installs frontend dependencies
+
+`npm run build` 	- Builds the application 
+
+`cd server` 			- Navigates into server directory 
+
+### Recommended to use python venv (optional):
+
+`pip3 install -U pip virtualenv`   - Installs pip virtualenv
+
+`python -m virtualenv venv`        - Creates venv directory 
+
+`venv/scripts/activate` 			 - Activates the virtualenv 
+
+### Install backend dependencies:
+
+`pip install -r requirements.txt` 
+
+### You may now run the application with:
+
+`python __init.py`
+
+<br>
+
+The app will run on http://localhost:3000/ which you may open up in browser.
+
+<br>
+
+# Configuring the app & Importing datasets 
+
+Open the app in browser and navigate to Settings.
+
+Enter your MySQL credentials and hit connect:
+
+![screenshot](https://i.gyazo.com/92fb3c010cd8a2ee83125846be9948de.png)
+
+Any errors messages will show up, if not, you should instantly see a button to import datasets:
+
+![screenshot](https://i.gyazo.com/837300a6d6dba2784b006de38959e3f1.png)
+
+NOTE: Run dataset import only once.
+
+<br>
+
+<br>
+
+# E2E tests
+
+### Introduction
+
+End to end tests automatically test the main functionality of each page of this app.
+
+This requires for the app to be running in your system with MySQL configured and datasets imported. 
+
+See instructions above.
+
+<br>
+
+You may run the app either in Docker or Python to execute these tests.
+
+If you're running the app in Docker you may use Linux/Windows/Mac[...]
+
+Running with Python environment is only tested in Windows.  
+
+<br>
+
+### Running E2E tests 
+
+Execute following command in your terminal (in project root directory):
+
+`.\node_modules\.bin\cypress open`
+
+Wait for cypress to open, click "E2E Testing" => "Start E2E Testing"
+
+You will immediately see a list of E2E tests for each page
+
+Click any of them to run the tests
+
+![screenshot](https://i.gyazo.com/d9dd62902f0646ed34aea95272fe8031.png)
+
+<br>
+<br>
+
+# Troubleshooting 
+
+- Make sure nothing is blocking port 3000.
+
+- See javascript console and server terminal if there are any issues with the app.
+
+- Any CORS errors means there was a problem initializing socket connection. 
+
+  - Disable adblock and any other browser extensions to avoid this. 
+
+- Map views not loading is most likely caused by Google's recent restrictions in their API.
+
+<br>
+<br>
+
+## Screenshots
+
+<details>
+  <summary>Index</summary>
+  
+  ![screenshot](https://i.gyazo.com/97e5a19c46d56921aacf73f0b736ec64.png)
+</details>
+
+<details>
+  <summary>Mobile</summary>
+  
+  ![screenshot](https://i.gyazo.com/ccfaa0e6d807c04b1f2d98352442e192.png)
+</details>
+
+<details>
+  <summary>Pagination</summary>
+  
+  ![screenshot](https://i.gyazo.com/e3226d1dc8f9ce7baad2cbfa67a220cd.png)
+</details>
+
+<details>
+  <summary>Statistics</summary>
+  
+  ![screenshot](https://i.gyazo.com/1800746b18bc639ac59ecc707f2abf7b.png)
+</details>
+
+<details>
+  <summary>Adding new data</summary>
+  
+  ![screenshot](https://i.gyazo.com/8d85f2fdaa4dd8a64ae6bc9f729b00ed.png)
+</details>
+
+<details>
+  <summary>Adding stations</summary>
+  
+  ![screenshot](https://i.gyazo.com/3a873ed1f12cc58317291d881a32b9d5.png)
+</details>
+
+<details>
+  <summary>Filtering</summary>
+  
+  ![screenshot](https://i.gyazo.com/6cf8376c55264984678d79bfaa2180d2.png)
+</details>
+
+<details>
+  <summary>Column sorting</summary>
+  
+  ![screenshot](https://i.gyazo.com/bc197bab4217793af88fcf5da88c8448.png)
+</details>
