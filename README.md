@@ -164,11 +164,11 @@ The app will run on http://localhost:3000/ which you may open up in browser.
 
 Open the app in browser and navigate to Settings.
 
-Enter your MySQL credentials and hit connect:
+### Enter your MySQL credentials and hit connect:
 
 ![screenshot](https://i.gyazo.com/92fb3c010cd8a2ee83125846be9948de.png)
 
-Any errors messages will show up, if not, you should instantly see a button to import datasets:
+### If no errors show up, you should instantly see a button to import datasets:
 
 ![screenshot](https://i.gyazo.com/837300a6d6dba2784b006de38959e3f1.png)
 
@@ -259,7 +259,7 @@ Click any of them to run the tests
 <details>
   <summary>Adding new data</summary>
   
-  ![screenshot](https://i.gyazo.com/8d85f2fdaa4dd8a64ae6bc9f729b00ed.png)
+  ![screenshot](https://i.gyazo.com/be864f05b29ae6d9fccd11965fbd335c.png)
 </details>
 
 <details>
