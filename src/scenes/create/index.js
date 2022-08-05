@@ -21,6 +21,7 @@ const DateFormat = () =>
 
     return (
         <DatePicker
+            customInput={<input className={styles.custominput} inputMode='none'/>}
             selected={startDate}
 
             onChange={(date) => {
@@ -705,7 +706,8 @@ export default class index extends Component
         return (
             <div className={anims.fade_class}>
                 <div className={styles.container}>
-                    <div className={styles.create_header}>
+                    <div 
+                    className={`${expandDeparture === true ? expandReturn === true ? styles.create_header_large : styles.create_header_px : expandReturn === true ? styles.create_header_px : styles.create_header} `} >
 
                         <div className={`${serverMessage === true ? styles.server_notify : styles.server_notify_hide} `}>
                             <p data-cy="s_notif" className={`${err_return === true ? styles.server_txt_err : styles.server_txt} `}>
@@ -884,11 +886,11 @@ export default class index extends Component
                             </div>
                             
                             <div className={styles.station_name}>
-                                <p className={styles.new_station}>Name</p>
+                                <p className={styles.new_station_n}>- Name</p>
                                 <input data-cy="in-name" type="text" onChange={(e) => {this.handleNewStation(e, 1)}} className={styles.input_station} value={station_name} />
-                                <p className={styles.new_station}>Address</p>
+                                <p className={styles.new_station_n}>- Address</p>
                                 <input data-cy="in-addr" type="text" onChange={(e) => {this.handleNewStation(e, 2)}} className={styles.input_station} value={station_address} />
-                                <p className={styles.new_station}>City</p>
+                                <p className={styles.new_station_n}>- City</p>
                                 <input data-cy="in-city" type="text" onChange={(e) => {this.handleNewStation(e, 3)}} className={styles.input_station} value={station_city} />
                                 
                                 <div className={styles.create_wrap}>

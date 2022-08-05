@@ -66,7 +66,7 @@ const MobileNavLinks = () =>
 
                     <li></li>
                     <li>
-                        <a href="https://github.com/st-t/solita-bike-app/" target="_blank" className={styles.gitLink}>
+                        <a href="https://github.com/st-t/solita-bike-app/" rel="noreferrer" target="_blank" className={styles.gitLink}>
                             Github
                         </a>
                     </li>
@@ -81,7 +81,7 @@ const Footer = () =>
 {
     return (
         <div className={styles.footer}>
-            <a href="https://github.com/st-t/solita-bike-app/" target="_blank" className={styles.gitLink}>
+            <a href="https://github.com/st-t/solita-bike-app/" rel="noreferrer" target="_blank" className={styles.gitLink}>
                 <FontAwesomeIcon className={styles.faicon} icon={faCat} size="2x" /><p className={styles.git}> Github</p>
             </a>
         </div>
