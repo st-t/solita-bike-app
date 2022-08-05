@@ -9,15 +9,25 @@ import "react-datepicker/dist/react-datepicker.css"
 import setHours from "date-fns/setHours";
 import setMinutes from "date-fns/setMinutes";
 
-var selectedDate;
+let set = false;
+let dateType = 0;
+let selectedDeparture;
+let selectedReturn;
 var last_date = [0, 0];
 
 
 const DateFormat = () => 
 {
     const [startDate, setStartDate] = useState(
-        setHours(setMinutes(new Date(), 30), 16)
+        setHours(setMinutes(new Date(), 0), 0)
     );
+
+    if(!set)
+    {
+        set = true; 
+        selectedReturn = startDate;
+        selectedDeparture = startDate;
+    }
 
     return (
         <DatePicker
@@ -26,7 +36,9 @@ const DateFormat = () =>
 
             onChange={(date) => {
                 setStartDate(date);
-                selectedDate = date;
+
+                if(dateType === 1) selectedReturn = date;
+                else if(dateType === 0) selectedDeparture = date;
             }}
 
             showTimeSelect
@@ -99,7 +111,9 @@ export default class index extends Component
     {
         this.setState({stationsLoaded: false});
         this.props.changeProps({isLoaded: true});
-
+        
+        this.dateClick(0);
+        this.dateClick(1);
         this.checkServer();
 
         // Listen the server for messages
@@ -239,12 +253,16 @@ export default class index extends Component
     // Client is setting journey date
     dateClick(type)
     {
-        // If date is null or undefined, return
-        if(selectedDate === null || !selectedDate) return;
-        
-        const dateObject = selectedDate;
-        selectedDate = selectedDate.toString();
+        let dateObject;
+        dateType = type;
 
+        if(type === 1) dateObject = selectedReturn;
+        else if(type === 0) dateObject = selectedDeparture;
+
+        // If date is null or undefined, return
+        if(dateObject === null || !dateObject) return;
+        
+        let selectedDate = dateObject.toString();
         let data = selectedDate.split(' ');
 
         var d = Date.parse(data[1] + "1, 2012");
@@ -256,7 +274,7 @@ export default class index extends Component
 
         switch(type)
         {
-            case 1: 
+            case 0: 
             {
                 // Check if we wanna close the station tab for client 
                 if( !( last_date[0] === 0 ) && !( last_date[0] === data[4] ) ) {
@@ -276,7 +294,7 @@ export default class index extends Component
                 break;
             }
                 
-            case 2: 
+            case 1: 
             {
                 if( !( last_date[1] === 0 ) && !( last_date[1] === data[4] ) ) {
                     close_tab = true;
@@ -755,7 +773,7 @@ export default class index extends Component
 
                                 <ul className={styles.j_ul}>
                                     <li>
-                                        <div onClick={() => this.dateClick(1)}  className={styles.datepick}>
+                                        <div onClick={() => this.dateClick(0)} onKeyUp={() => this.dateClick(0)}  className={styles.datepick}>
                                             <DateFormat />
                                         </div>
                                     </li>
@@ -801,7 +819,7 @@ export default class index extends Component
 
                                 <ul className={styles.j_ul}>
                                     <li>
-                                        <div onClick={() => this.dateClick(2)}  className={styles.datepick}>
+                                        <div onClick={() => this.dateClick(1)} onKeyUp={() => this.dateClick(1)} className={styles.datepick}>
                                             <DateFormat />
                                         </div>
                                     </li>
