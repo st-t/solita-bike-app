@@ -27,6 +27,21 @@ socketio = sio(app, async_mode='threading', cors_allowed_origins="*", async_hand
 
 def starts(var, string):
 
+    """ 
+    starts()
+
+    - parameters : (
+            [str] string to compare
+            [str] string to compare 
+    )
+
+    - description : checks if string starts with substring
+
+    - return : True if string starts with substring
+    otherwise False
+
+    """
+
     # String wrapper function
     # (if string starts with a substring)
     try:
@@ -40,7 +55,19 @@ def starts(var, string):
 
 def respond_to_client(socketio, json_response, sid):
 
-    # Sends a socketio message to client
+    """ 
+    handle_message()
+
+    - parameters : (
+            [object] socketio connection object
+            [json] json file to send
+            [str] client sid
+    )
+
+    - description : sends a response to client
+    - return : none
+    """
+
     res = db.json.dumps(json_response)
     socketio.emit('message', res, to=sid)
 
@@ -57,7 +84,17 @@ def socket_disconnect():
 @socketio.on('message')
 def handle_message(data):
 
-    # Listen for socket messages 
+    """ 
+    handle_message()
+
+    - parameters : (
+        [str] message from client
+    )
+
+    - description : listens messages from clients
+    - return : none
+    """
+
     # A client has connected to our webpage
     if starts(data, '[connection]'):
         
@@ -808,12 +845,19 @@ def not_found(e):
 
 def main():
 
-    # init 
+    """ 
+    main()
+
+    - parameters : ()
+    - description : called to initialize the app
+    - return : none
+    """
+
     # Check if we're running production & Gunicorn 
     prod = db.os.getenv('PRODUCTION')
 
     if not prod:
-        port = 5000
+        port = 3000
         domain = 'localhost'
         print(' [#] __init:', domain, port)
         socketio.run(app, host=domain, port=port)
