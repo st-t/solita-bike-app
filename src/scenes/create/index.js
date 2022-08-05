@@ -1,4 +1,5 @@
 import React, { Component, useState } from 'react'
+
 import GoogleMaps from '../maps';
 import styles from './index.module.css';
 import anims from '../anims.module.css';
@@ -6,6 +7,7 @@ import socket from '../../addons/socket';
 
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css"
+
 import setHours from "date-fns/setHours";
 import setMinutes from "date-fns/setMinutes";
 
@@ -89,9 +91,6 @@ export default class index extends Component
             
             // Can we start calculating stations distance ? 
             canGetDistance: false,
-
-            // Expand
-            expandDeparture: false, expandReturn: false,
 
             // Dropdowns
             dropdownDeparture: false, dropdownReturn: false,
@@ -276,36 +275,25 @@ export default class index extends Component
         {
             case 0: 
             {
-                // Check if we wanna close the station tab for client 
-                if( !( last_date[0] === 0 ) && !( last_date[0] === data[4] ) ) {
-                    close_tab = true;
-                }
-
                 if(d_station && close_tab) 
                 {
                     selectedDate = 0;
                     last_date[0] = 0;
                     close_tab = false;
-                    this.setState({expandDeparture: false});
                 }
                 else last_date[0] = data[4];
 
-                this.setState( {dateOfDeparture: dateObject, depar: format_date}, this.checkValues ); 
+                this.setState( {dateOfDeparture: dateObject, depar: format_date}, this.calcTimeDiff ); 
                 break;
             }
                 
             case 1: 
             {
-                if( !( last_date[1] === 0 ) && !( last_date[1] === data[4] ) ) {
-                    close_tab = true;
-                }
-
                 if(r_station && close_tab) 
                 {
                     selectedDate = 0;
                     last_date[1] = 0;
                     close_tab = false;
-                    this.setState({expandReturn: false});
                 } 
                 else last_date[1] = data[4];
                 
@@ -329,7 +317,7 @@ export default class index extends Component
         // Check if departure is greater than return
         // Which doesn't make sense, we are not going back in time (last time I checked)
         if(date1 > date2)
-            this.setState( {duration: null} ); 
+            this.setState( {duration: null, duration_text: "<Departure can't be after return>"} ); 
         else 
         {
             if(diffSeconds > 0)
@@ -342,19 +330,6 @@ export default class index extends Component
             else 
                 this.setState( {duration: null} ); 
         }
-    }
-
-    // Client wants to expand departure part
-    handleDeparture()
-    {
-        if(!this.state.sqlConnected) return; 
-        this.setState({expandDeparture: !this.state.expandDeparture});
-    }
-
-    handleReturn()
-    {
-        if(!this.state.sqlConnected) return; 
-        this.setState({expandReturn: !this.state.expandReturn});
     }
 
     // Client is writing duration
@@ -634,8 +609,6 @@ export default class index extends Component
             distance_text: null,
             duration_text: null,
             canCreate: false,
-            expandDeparture: false,
-            expandReturn: false,
             mapPreview: true
         });
     }
@@ -708,7 +681,6 @@ export default class index extends Component
     render() 
     {
         const {
-            expandDeparture, expandReturn, 
             departure_station, return_station, 
             dropdownDeparture, dropdownReturn,
             duration_text, d_station, 
@@ -724,8 +696,7 @@ export default class index extends Component
         return (
             <div className={anims.fade_class}>
                 <div className={styles.container}>
-                    <div 
-                    className={`${expandDeparture === true ? expandReturn === true ? styles.create_header_large : styles.create_header_px : expandReturn === true ? styles.create_header_px : styles.create_header} `} >
+                    <div className={styles.create_header} >
 
                         <div className={`${serverMessage === true ? styles.server_notify : styles.server_notify_hide} `}>
                             <p data-cy="s_notif" className={`${err_return === true ? styles.server_txt_err : styles.server_txt} `}>
@@ -735,97 +706,91 @@ export default class index extends Component
 
                         <p className={styles.create_title}>Create new journey</p>
 
-                        <div className={styles.journey_list}>
-                            <p data-cy="c_dep"
-                            onClick = {() => this.handleDeparture()} 
-                            className={`${expandDeparture === true ? styles.departure_e : styles.departure} `}> Departure </p>
+                        
+                        <div className={styles.data_list}>
 
-                            {/* Expanded content */}
-                            <div className = {`${expandDeparture === true ? styles.j_departure_visible : styles.j_departure_off} `} >
+                            <ul>
 
-                                <ul className={styles.j_ul}>
-                                    <li>
-                                        <p>Station :</p>
-                                    </li>
-                                </ul>
+                                <li className={styles.data_li}>
+                                    <p 
+                                    data-cy="c_dep"
+                                    className={styles.data_title}> Departure </p>
+                                </li>
 
-                                <ul className={styles.j_ul}>
-                                    <li>
-                                        <div className={styles.f_searchWrap}>
-                                            <div className={styles.f_search}>
-                                                <input type="text" data-name="departure" onChange={this.handleStation.bind(this)} className={styles.f_searchTerm} value={departure_station} />
-                                            </div>
+                                <li className={styles.data_li}>
+                                    <p>Station :</p>
+                                </li>
 
-                                            <div className={styles.drop_abs_1}>
-                                                <div className={styles.dropdown} data-open={dropdownDeparture} data-type="1">
-                                                    {this.createDropdown(1)}
-                                                </div>
+                                <li className={styles.data_li}>
+                                    <div className={styles.f_searchWrap}>
+                                        <div className={styles.f_search}>
+                                            <input type="text" data-name="departure" onChange={this.handleStation.bind(this)} className={styles.f_searchTerm} value={departure_station} />
+                                        </div>
+
+                                        <div className={styles.drop_abs_1}>
+                                            <div className={styles.dropdown} data-open={dropdownDeparture} data-type="1">
+                                                {this.createDropdown(1)}
                                             </div>
                                         </div>
-                                    </li>
-                                </ul>
+                                    </div>
+                                </li>
 
-                                <ul className={styles.j_ul2}>
-                                    <li>
-                                        <p>Start :</p>
-                                    </li>
-                                </ul>
+                                <li className={styles.data_li}>
+                                    <p>Time :</p>
+                                </li>
 
-                                <ul className={styles.j_ul}>
-                                    <li>
-                                        <div onClick={() => this.dateClick(0)} onKeyUp={() => this.dateClick(0)}  className={styles.datepick}>
-                                            <DateFormat />
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
+                                <li className={styles.data_li}>
+                                    <div onClick={() => this.dateClick(0)} onKeyUp={() => this.dateClick(0)}  className={styles.datepick}>
+                                        <DateFormat />
+                                    </div>
+                                </li>
+                            </ul>
+                        
+
                         </div>
 
-                        <div className={styles.journey_list}>
-                            <p data-cy="c_ret"
-                            onClick = {() => this.handleReturn()} 
-                            className={`${expandReturn === true ? styles.departure_e : styles.departure} `}> Return </p>
+                        <div className={styles.data_list}> 
 
-                            {/* Expanded content */}
-                            <div className = {`${expandReturn === true ? styles.j_departure_visible : styles.j_departure_off} `} >
+                            <ul>
+                                <li className={styles.data_li}>
+                                    <p 
+                                    data-cy="c_ret"
+                                    className={styles.data_title}> Return </p>
+                                </li>
 
-                                <ul className={styles.j_ul}>
-                                    <li>
-                                        <p>Station :</p>
-                                    </li>
-                                </ul>
+                                <li className={styles.data_li}>
+                                    <p>Station :</p>
+                                </li>
 
-                                <ul className={styles.j_ul}>
-                                    <li>
-                                        <div className={styles.f_searchWrap}>
-                                            <div className={styles.f_search}>
-                                                <input type="text" data-name="return" onChange={this.handleStation.bind(this)} className={styles.f_searchTerm} value={return_station} />
-                                            </div>
+                                <li className={styles.data_li}>
+                                    <div className={styles.f_searchWrap}>
+                                        <div className={styles.f_search}>
+                                            <input type="text" data-name="return" onChange={this.handleStation.bind(this)} className={styles.f_searchTerm} value={return_station} />
+                                        </div>
 
-                                            <div className={styles.drop_abs_1}>
-                                                <div className={styles.dropdown} data-open={dropdownReturn} data-type="2">
-                                                    {this.createDropdown(2)}
-                                                </div>
+                                        <div className={styles.drop_abs_1}>
+                                            <div className={styles.dropdown} data-open={dropdownReturn} data-type="2">
+                                                {this.createDropdown(2)}
                                             </div>
                                         </div>
-                                    </li>
-                                </ul>
+                                    </div>
+                                </li>
 
-                                <ul className={styles.j_ul2}>
-                                    <li>
-                                        <p>Start :</p>
-                                    </li>
-                                </ul>
+                                <li className={styles.data_li}> 
+                                    <p>Time :</p>
+                                </li>
 
-                                <ul className={styles.j_ul}>
-                                    <li>
-                                        <div onClick={() => this.dateClick(1)} onKeyUp={() => this.dateClick(1)} className={styles.datepick}>
-                                            <DateFormat />
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
+                                <li className={styles.data_li}>
+                                    <div onClick={() => this.dateClick(1)} onKeyUp={() => this.dateClick(1)} className={styles.datepick}>
+                                        <DateFormat />
+                                    </div>
+                                </li>
+                            </ul>
                         </div>
+
+                    </div>
+
+                    <div className={styles.create_mid} >
                         
                         <div className={styles.journey_headers_list}>
                             <ul className={styles.set_list}>
