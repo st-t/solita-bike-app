@@ -101,13 +101,13 @@ https://dev.hsl.fi/citybikes/od-trips-2021/2021-06.csv
 https://dev.hsl.fi/citybikes/od-trips-2021/2021-07.csv
 
 
-### Place datasets in solita-bike-app\server\datasets 
+Place datasets in <b>solita-bike-app\server\datasets </b>
 
 <br>
 
 ## Running the app in Docker ( Windows/Linux/Mac[...] )
 
-### Make sure Docker is successfully installed in your system.
+Make sure Docker is successfully installed in your system.
 
 ### Execute following commands in terminal: 
 
@@ -170,7 +170,7 @@ Open the app in browser and navigate to Settings.
 
 ![screenshot](https://i.gyazo.com/92fb3c010cd8a2ee83125846be9948de.png)
 
-### If no errors show up, you should instantly see a button to import datasets:
+### You should instantly see a button to import datasets:
 
 ![screenshot](https://i.gyazo.com/837300a6d6dba2784b006de38959e3f1.png)
 
@@ -202,17 +202,26 @@ Running with Python environment is only tested in Windows.
 
 ### Running E2E tests 
 
-Execute following command in your terminal (in project root directory):
+Execute following command in your terminal <b>(in project root directory)</b>:
+
+`npm install`  		<b>(if you didn't do this already)</b>
 
 `.\node_modules\.bin\cypress open`
 
-Wait for cypress to open, click "E2E Testing" => "Start E2E Testing"
+Wait for cypress to open => click <b>"E2E Testing"</b> => <b>"Start E2E Testing"</b>
 
 You will immediately see a list of E2E tests for each page
 
 Click any of them to run the tests
 
 ![screenshot](https://i.gyazo.com/d9dd62902f0646ed34aea95272fe8031.png)
+
+<br>
+<br>
+
+## Known issues
+
+- Map views loading is unpredictable at times on localhost, most likely caused by Google's recent restrictions in their API.
 
 <br>
 <br>
@@ -227,12 +236,13 @@ Click any of them to run the tests
 
   - Disable adblock and any other browser extensions to avoid this. 
 
-- Map views not loading is most likely caused by Google's recent restrictions in their API.
+- Make sure your database is working properly.
 
 <br>
 <br>
 
 ## Screenshots
+
 
 <details>
   <summary>Index</summary>
@@ -255,7 +265,7 @@ Click any of them to run the tests
 <details>
   <summary>Statistics</summary>
   
-  ![screenshot](https://i.gyazo.com/1800746b18bc639ac59ecc707f2abf7b.png)
+  ![screenshot](https://i.gyazo.com/431503ea1ec42ff5643945004ad26eed.png)
 </details>
 
 <details>
@@ -274,10 +284,4 @@ Click any of them to run the tests
   <summary>Filtering</summary>
   
   ![screenshot](https://i.gyazo.com/6cf8376c55264984678d79bfaa2180d2.png)
-</details>
-
-<details>
-  <summary>Column sorting</summary>
-  
-  ![screenshot](https://i.gyazo.com/bc197bab4217793af88fcf5da88c8448.png)
 </details>

@@ -10,6 +10,8 @@ import styles from './index.module.css';
 import anims from '../anims.module.css';
 import "react-datepicker/dist/react-datepicker.css"
 
+var dist_to; 
+var dist_from;
 var refreshLink = false;
 var start_date, end_date;
 
@@ -147,20 +149,22 @@ class Station extends Component
                 // Journeys to this station
                 if( obj.hasOwnProperty('station_journeys_to') )
                 {
-                    this.setState({journeys_to : this.numberWithCommas(obj.station_journeys_to.num)});
+                    dist_to = obj.station_journeys_to.num;
+                    this.setState({journeys_to : this.numberWithCommas(dist_to)});
                 }
 
                 // Journeys from this station
                 if( obj.hasOwnProperty('station_journeys_from') )
                 {
-                    this.setState({journeys_from : this.numberWithCommas(obj.station_journeys_from.num)});
+                    dist_from = obj.station_journeys_from.num;
+                    this.setState({journeys_from : this.numberWithCommas(dist_from)});
                 } 
 
                 // Average distance traveled to this station
                 if( obj.hasOwnProperty('station_distance_to') )
                 {
                     let dist_str;
-                    let fixed_dist = parseFloat(obj.station_distance_to.num).toFixed(0);
+                    let fixed_dist = parseFloat(obj.station_distance_to.num / dist_to).toFixed(0);
 
                     if(fixed_dist < 1000)
                         dist_str = String(fixed_dist) + ' m'
@@ -174,7 +178,7 @@ class Station extends Component
                 if( obj.hasOwnProperty('station_distance_from') )
                 {
                     let dist_str;
-                    let fixed_dist = parseFloat(obj.station_distance_from.num).toFixed(0);
+                    let fixed_dist = parseFloat(obj.station_distance_from.num / dist_from).toFixed(0);
 
                     if(fixed_dist < 1000)
                         dist_str = String(fixed_dist) + ' m'
