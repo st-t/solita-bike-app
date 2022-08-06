@@ -162,7 +162,7 @@ The app will run on http://localhost:3000/ which you may open up in browser.
 
 <br>
 
-# Configuring the app & Importing datasets 
+## Configuring the app & Importing datasets 
 
 Open the app in browser and navigate to Settings.
 
@@ -180,7 +180,7 @@ NOTE: Run dataset import only once.
 
 <br>
 
-# E2E tests
+## E2E tests
 
 ### Introduction
 
@@ -217,7 +217,7 @@ Click any of them to run the tests
 <br>
 <br>
 
-# Troubleshooting 
+## Troubleshooting 
 
 - Make sure nothing is blocking port 3000.
 
