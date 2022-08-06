@@ -1,3 +1,6 @@
+.list {
+    padding-bottom: 30px;
+}
 
 .list ul:nth-child(odd) {
     background-color:rgba(27, 24, 24, 0.445);
@@ -53,7 +56,7 @@
     list-style: none;
     display: flex;
     position: absolute;
-    left: 15%;
+    left: 0%;
     cursor: pointer;
 
     padding: 5px;
@@ -67,7 +70,7 @@
     list-style: none;
     display: flex;
     position: absolute;
-    left: 15%;
+    left: 0%;
     cursor: pointer;
 }
 
@@ -79,7 +82,7 @@
     list-style: none;
     display: flex;
     position: absolute;
-    right: 15%;
+    right: 0%;
     cursor: pointer;
 
     padding: 5px;
@@ -93,9 +96,8 @@
     list-style: none;
     display: flex;
     position: absolute;
-    right: 15%;
+    right: 0%;
     cursor: pointer;
-
 }
 
 .pageButtons li {
@@ -111,7 +113,7 @@
 }
 
 .pageIncrement  {
-    font-size: 40px;
+    font-size: 30px;
 }
 
 .pageSkipDeactivated, .pageScroller, .pageSkip {
@@ -367,23 +369,13 @@
     .list {
         width: 85%;
     }
-}
 
-@media screen and (max-width:1450px) {
-    .pageButtons {
-        list-style: none;
-        display: flex;
-        position: absolute;
-        left: 5%;
-        cursor: pointer;
+    .pageActive {
+        font-size: 50px;
     }
 
-    .pageButtonsDown {
-        list-style: none;
-        display: flex;
-        position: absolute;
-        right: 5%;
-        cursor: pointer;
+    .pageIncrement {
+        font-size: 40px;
     }
 }
 
@@ -403,7 +395,7 @@
         list-style: none;
         display: flex;
         position: absolute;
-        left: 1%;
+        left: 0%;
         cursor: pointer;
     }
 
@@ -411,8 +403,12 @@
         list-style: none;
         display: flex;
         position: absolute;
-        right: 1%;
+        right: 0%;
         cursor: pointer;
+    }
+
+    .pageActive {
+        font-size: 30px;
     }
 }
 

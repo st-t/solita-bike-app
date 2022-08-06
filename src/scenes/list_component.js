@@ -544,10 +544,16 @@ export default class NewList extends Component {
 
         const pages = pageNumbers.map(number => 
         {
+            let pre = number;
+
+            // Create prefixes for large numbers 
+            if(number > 1000)
+                pre = String(parseFloat((number / 1000).toFixed(0)) + 'k');
+
             return (
                 <li className={`${( currentPage + ( (fetchEntriesAmount / pageEntries) * scrolledPage ) ) === number ? styles.pageActive : styles.pageIncrement} `}
                     key={number} id={number} onClick={this.handlePage}>
-                    {number}
+                    {pre}
                 </li>
             );
         });

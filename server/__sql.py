@@ -560,7 +560,7 @@ def init_tables(socket, sid):
                 "INDEX `FK_station` (`stationID`) USING BTREE, " +\
                 "INDEX (`stationID`, `languageID`) USING BTREE, " \
                 "CONSTRAINT `FK_station` FOREIGN KEY (`stationID`) " \
-                "REFERENCES `bike-app`.`city_stations` (`id`) ON DELETE CASCADE " \
+                "REFERENCES `{}`.`city_stations` (`id`) ON DELETE CASCADE ".format( mysql[1] ) + \
             ") " +\
             "COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB;"
 

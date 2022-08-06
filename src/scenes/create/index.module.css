@@ -59,7 +59,7 @@
 
 .new_station_n {
     padding-bottom: 10px;
-    width: 215px;
+    width: 239px;
     height: 20px;
     top: 27px;
     font-weight:400;
@@ -205,7 +205,7 @@
 }
 
 .datepick {
-    width: 670px;
+    width: 320px;
     margin: auto;
     padding-left: 10px;
     z-index: 99999;

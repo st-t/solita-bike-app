@@ -317,7 +317,7 @@ export default class index extends Component
         // Check if departure is greater than return
         // Which doesn't make sense, we are not going back in time (last time I checked)
         if(date1 > date2)
-            this.setState( {duration: null, duration_text: "<Departure can't be after return>"} ); 
+            this.setState( {duration: null, duration_text: "<Departure can't be after return>", canCreate: false} ); 
         else 
         {
             if(diffSeconds > 0)
