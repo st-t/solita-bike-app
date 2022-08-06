@@ -23,8 +23,9 @@ export default class index extends Component
 
             // If client wants to sort by a column
             sortColumn: 1,
+            sortDir: 'down',
             have_sort: [true, true, true, true, true, false],
-            sort_columns: [true, false, false, false, false, false],
+            sort_columns: ['down', false, false, false, false, false],
 
             // List column titles
             columns: ['#', 'Departure Station', 'Return Station', 'Distance', 'Duration', 'Departure'],
@@ -308,10 +309,11 @@ export default class index extends Component
     }
 
     // Callback for sorting columns
-    sortCallback(sort)
+    sortCallback(sort, dir)
     {
         this.setState({ 
             sortColumn: sort,
+            sortDir: dir,
             scrolledPage: 0,
             actualScrolled: 0
         }, this.applyFilters);
@@ -336,7 +338,7 @@ export default class index extends Component
             fetchEntriesAmount, lastFetchID, 
             goToLast, sortColumn, 
             actualScrolled, search,
-            pageEntries
+            pageEntries, sortDir
 
         } = this.state;
 
@@ -365,8 +367,10 @@ export default class index extends Component
             scrolled: actualScrolled,
             lastID: lastFetchID,
             sort: sortColumn,
+            direction: sortDir,
             search: search
         };
+        
         this.setState( {filters: obj}, this.serverRequest );
     }
 

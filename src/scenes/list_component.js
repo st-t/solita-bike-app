@@ -309,12 +309,22 @@ export default class NewList extends Component {
             if(!(i===column) && el) arr.push(false);
             else 
             {
-                arr.push(!state_var);
+                let newValue = false;
 
-                if(!state_var) 
+                switch(state_var)
+                {
+                    case 'down': newValue='up'; break;
+                    case 'up': newValue='down'; break;
+                    case false: newValue='down'; break;
+                    default: break;
+                }
+
+                arr.push(newValue)
+
+                if(arr[i]) 
                 {
                     had_res = true;
-                    this.props.sortCallback(i+1);
+                    this.props.sortCallback(i+1, newValue);
                 }
             }
         }
@@ -322,8 +332,8 @@ export default class NewList extends Component {
         // Sort by ID by default
         if(!had_res)
         {
-            arr[0] = true;
-            this.props.sortCallback(1);
+            arr[0] = 'down';
+            this.props.sortCallback(1, 'down');
         }
 
         // Set the state array that we just made 
@@ -351,9 +361,12 @@ export default class NewList extends Component {
                     { haveSort === true
                     ?
                     <>
-                        { sort_columns[index] === true 
+                        { sort_columns[index] === 'up' 
                         ? <FontAwesomeIcon data-cy="sort" className={styles.sort_icon_active} icon={faAngleUp} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} /> 
-                        : <FontAwesomeIcon data-cy="sort" className={styles.sort_icon} icon={faAngleDown} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} /> }
+                        : sort_columns[index] === 'down' 
+                        ? <FontAwesomeIcon data-cy="sort" className={styles.sort_icon_active} icon={faAngleDown} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} />
+                        : <FontAwesomeIcon data-cy="sort" className={styles.sort_icon} icon={faAngleDown} onClick = { e => this.handleSort(e, this.props.data.sort_columns[index], index)} /> 
+                        }
                     </>
                     : null }
                 </li>
@@ -730,7 +743,7 @@ export default class NewList extends Component {
             overSeconds, overMeters,
             metersChecked, secondsChecked, 
             sortColumn, search,
-            pageEntries
+            pageEntries, sortDir
 
         } = this.props.data;
 
@@ -758,6 +771,7 @@ export default class NewList extends Component {
             scrolled: var_scrolled,
             lastID: setFetch,
             sort: sortColumn,
+            direction: sortDir,
             search: search
         };
         siteLoaded = false;

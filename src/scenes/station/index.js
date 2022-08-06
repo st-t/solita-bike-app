@@ -356,7 +356,7 @@ class Station extends Component
         end_date = end_date.toString();
         data = end_date.split(' ');
 
-        var d = Date.parse(data[1] + "1, 2012");
+        d = Date.parse(data[1] + "1, 2012");
         if( !isNaN(d) ) d = new Date(d).getMonth() + 1;
 
         let format_end = data[3] + '-' + d + '-' + data[2];

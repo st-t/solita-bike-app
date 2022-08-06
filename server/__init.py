@@ -600,6 +600,7 @@ def handle_message(data):
             
             x = message
             sort = x['sort']
+            sortDir = x['direction']
             entries = x['limit']
             previous = x['prev']
             search = x['search']
@@ -699,6 +700,9 @@ def handle_message(data):
             if sort == 4: column_sort = 'j.distance'
             if sort == 5: column_sort = 'j.duration'
 
+            if sort:
+                if sortDir == 'up': order = 'DESC'
+
             if not last_page:
 
                 query = "SELECT j.id, t.name, tr.name, j.distance, j.duration, j.departure, s.x, s.y, sr.x, sr.y, s.id, sr.id, j.return_station " \
@@ -719,6 +723,13 @@ def handle_message(data):
                             order, entries)
             else: 
                 
+                order = 'DESC'
+                reverseOrder = 'ASC'
+                if sort:
+                    if sortDir == 'up': 
+                        order = 'ASC'
+                        reverseOrder = 'DESC'
+                
                 # Client wants to see the last page which becomes a bit funky 
                 query = "SELECT * " \
                         "FROM ( " \
@@ -732,14 +743,15 @@ def handle_message(data):
                             "ON s.id = t.stationID " \
                             "LEFT JOIN `city_stations` sr " \
                             "ON sr.id = tr.stationID " \
-                            "{}{}{}ORDER BY {} DESC LIMIT {}".format(
+                            "{}{}{}ORDER BY {} {} LIMIT {}".format(
                             query_dist, 
                             query_dur, 
                             search_query,
                             column_sort, 
+                            order,
                             entries) + \
                         ") j " \
-                        "ORDER BY {} ASC;".format(column_sort)
+                        "ORDER BY {} {};".format(column_sort, reverseOrder)
             
             # Fetch
             print('\n [#] Fetch - {}\n'.format(query))
