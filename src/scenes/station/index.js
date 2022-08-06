@@ -32,6 +32,7 @@ const DateFormat = () =>
 
         setStartDate(start);
         setEndDate(end);
+
         start_date = start;
         end_date = end;
     };
@@ -338,10 +339,12 @@ class Station extends Component
         start_date = start_date.toString();
         let data = start_date.split(' ');
 
+        // Sun May 30 2021 00:00:00 
+
         var d = Date.parse(data[1] + "1, 2012");
         if( !isNaN(d) ) d = new Date(d).getMonth() + 1;
 
-        let format_start = data[3] + '-' + d + '-' + data[2]
+        let format_start = data[3] + '-' + d + '-' + data[2];
 
         this.setState({
             fromDate: format_start,
@@ -352,7 +355,11 @@ class Station extends Component
 
         end_date = end_date.toString();
         data = end_date.split(' ');
-        let format_end = data[3] + '-' + d + '-' + data[2]
+
+        var d = Date.parse(data[1] + "1, 2012");
+        if( !isNaN(d) ) d = new Date(d).getMonth() + 1;
+
+        let format_end = data[3] + '-' + d + '-' + data[2];
 
         this.setState({
             toDate: format_end,
