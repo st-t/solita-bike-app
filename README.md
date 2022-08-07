@@ -202,17 +202,19 @@ Running with Python environment is only tested in Windows.
 
 ### Running E2E tests 
 
-Execute following command in your terminal <b>(in project root directory)</b>:
+Open up another terminal and execute the following <b>(in project root directory)</b>:
 
-`npm install`  		<b>(if you didn't do this already)</b>
+```
+npm install cypress
+.\node_modules\.bin\cypress open
 
-`.\node_modules\.bin\cypress open`
+```
 
 Wait for cypress to open => click <b>"E2E Testing"</b> => <b>"Start E2E Testing"</b>
 
 You will immediately see a list of E2E tests for each page
 
-Click any of them to run the tests
+Click any of them to run the tests:
 
 ![screenshot](https://i.gyazo.com/d9dd62902f0646ed34aea95272fe8031.png)
 
