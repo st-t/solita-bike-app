@@ -168,10 +168,12 @@ export default class index extends Component
         });
 
         // First reset our page
-        const { column_data } = this.state;
+        const { column_data, station_ids } = this.state;
         
-        const arraylist = [];
+        // For some reason you need to create 2 of them 
+        const arraylist = [], arraylist2 = [];
         for (let i = 0; i < column_data.length; i++) arraylist.push( [] );
+        for (let i = 0; i < station_ids.length; i++) arraylist2.push( [] );
         
         // Set loading screen and callback request
         this.changeLoading(false);
@@ -185,6 +187,7 @@ export default class index extends Component
             displayFilters: false,
             calledLast: last,
             column_data: arraylist,
+            station_ids: arraylist2,
             wentToLast: false
         }, this.formatJsonRequest );
     }
