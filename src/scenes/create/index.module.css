@@ -16,9 +16,11 @@
 }
 
 .server_notify {
+    top: -140px;
+    bottom: 0px;
     padding: 5px;
     display: block;
-    position: relative;
+    position: absolute;
     width: 100%;
     margin: auto;
     color: rgba(42, 192, 42, 0.849);
@@ -426,6 +428,11 @@
 }
 
 @media screen and (max-width:1014px) {
+
+    .server_notify {
+        font-size: 25px;
+        top: -120px;
+    }
 
     .create_title, .create_station {
         font-size: 33px;
