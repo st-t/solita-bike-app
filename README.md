@@ -202,10 +202,12 @@ Running with Python environment is only tested in Windows.
 
 ### Running E2E tests 
 
-Open up another terminal and execute the following <b>(in project root directory)</b>:
+Open up another terminal and execute the following commands <b>(in project root directory)</b>:
 
 ```
+
 npm install cypress
+
 .\node_modules\.bin\cypress open
 
 ```
