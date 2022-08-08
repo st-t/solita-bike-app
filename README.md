@@ -85,7 +85,7 @@ Its also not recommended to use extensions such as DarkReader.
 
 <br>
 
-### Either download the repository use git clone:
+### Either download the repository or use git clone:
 
 ```
 git clone https://github.com/st-t/solita-bike-app
@@ -128,7 +128,7 @@ We are adding some memory as extra Docker argument to be able to handle dataset 
 
 <br>
 
-## Running the app with Python & npm (Windows only) 
+## Running the app with Python (Windows only) 
 
 ### Run:
 
