@@ -124,7 +124,7 @@ docker run --rm --memory=500m -p 3000:3000 solita-bike-app
 
 The app will run on http://localhost:3000/ which you may open up in browser.
 
-We are adding some memory as extra Docker argument to be able to handle dataset imoprts.
+We are adding some memory as extra Docker argument to be able to handle dataset imports.
 
 <br>
 
